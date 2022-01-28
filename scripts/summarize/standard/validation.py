@@ -7,6 +7,7 @@ sys.path.append(os.path.join(os.getcwd(),"inputs"))
 sys.path.append(os.path.join(os.getcwd(),"scripts"))
 sys.path.append(os.getcwd())
 import pandas as pd
+import matplotlib.pyplot as plt
 from shutil import copy2 as shcopy
 from sqlalchemy import create_engine
 from input_configuration import base_year
@@ -61,7 +62,7 @@ county_lookup = {
     33: 'King',
     35: 'Kitsap',
     53: 'Pierce',
-    61: 'Snohomish'	
+    61: 'Snohomish'
     }
 
 tod_lookup = {  0:'20to5',
@@ -101,6 +102,13 @@ def main():
     # Load observed data for given base year
     df_obs = pd.read_sql("SELECT * FROM observed_transit_boardings WHERE year=" + str(base_year), con=conn)
     df_obs['route_id'] = df_obs['route_id'].astype('int')
+
+    # Load routes and county crosswalk
+    df_route_county = pd.read_csv(r'inputs\model\lookup\transit_route_county.csv')
+    df_obs = df_obs.merge(df_route_county, how='left', on='route_id')
+    df_obs.loc[df_obs.county.isna(),'county'] = ''
+
+
     df_line_obs = df_obs.copy()
 
     # Load model results and calculate modeled daily boarding by line
@@ -120,16 +128,16 @@ def main():
     df.to_csv(os.path.join(validation_output_dir,'daily_boardings_by_line.csv'), index=False)
 
     # Boardings by agency
-    df_agency = df.groupby(['agency']).sum().reset_index()
+    df_agency = df.groupby(['agency', 'county']).sum().reset_index()
     df_agency['diff'] = df_agency['modeled_5to20']-df_agency['observed_5to20']
     df_agency['perc_diff'] = df_agency['diff']/df_agency['observed_5to20']
     df_agency.to_csv(os.path.join(validation_output_dir,'daily_boardings_by_agency.csv'), 
-                        index=False, columns=['agency','observed_5to20','modeled_5to20','diff','perc_diff'])
+                        index=False, columns=['agency', 'county','observed_5to20','modeled_5to20','diff','perc_diff'])
 
     # Boardings for special lines
     df_special = df[df['route_code'].isin(special_route_list)]
     df_special.to_csv(os.path.join(validation_output_dir,'daily_boardings_key_routes.csv'), 
-                        index=False, columns=['description','route_code','agency','observed_5to20','modeled_5to20','diff','perc_diff'])
+                        index=False, columns=['description','route_code','agency', 'county','observed_5to20','modeled_5to20','diff','perc_diff'])
 
     ########################################
     # Transit Boardings by Stop
@@ -137,6 +145,12 @@ def main():
 	
     # Light Rail
     df_obs = pd.read_sql("SELECT * FROM light_rail_station_boardings WHERE year=" + str(base_year), con=conn)
+    df_obs['station_name'] = df_obs['station_name'].astype(str)
+
+    station_county = pd.read_csv(r'inputs\model\lookup\station_county.csv')
+    station_county['station_name'] = station_county['station_name'].astype(str)
+    df_obs = df_obs.join(station_county.set_index('station_name'), how='left', on='station_name').\
+        assign(county=lambda df: df.county.fillna(''))
 
     # Scale boardings for model period 5to20, based on boardings along entire line
     light_rail_list = [6996]
@@ -148,7 +162,7 @@ def main():
     df = df.merge(df_obs, left_on='i_node', right_on='emme_node')
     df.rename(columns={'total_boardings':'modeled_5to20'},inplace=True)
     df['observed_5to20'] = df['observed_5to20'].astype('float')
-    df.index = df['station_name']
+    df = df.set_index(['station_name', 'county'])
     df_total = df.copy()[['observed_5to20','modeled_5to20']]
     df_total.loc['Total',['observed_5to20','modeled_5to20']] = df[['observed_5to20','modeled_5to20']].sum().values
     df_total.to_csv(r'outputs\validation\light_rail_boardings.csv', index=True)
@@ -303,8 +317,8 @@ def main():
     df_obs[['Flag1','Flag2','Flag3','Flag4','Flag5','Flag6']] = df_obs[['Flag1','Flag2','Flag3','Flag4','Flag5','Flag6']].fillna(-1).astype('int')
 
     tod_cols = [u'ff_spd', u'5am_spd', u'6am_spd',
-    	   u'7am_spd', u'8am_spd', u'9am_spd', u'3pm_spd', u'4pm_spd', u'5pm_spd',
-    	   u'6pm_spd_7pm_spd_avg']
+    u'7am_spd', u'8am_spd', u'9am_spd', u'3pm_spd', u'4pm_spd', u'5pm_spd',
+    u'6pm_spd_7pm_spd_avg']
 
     _df_obs = pd.melt(df_obs, id_vars='Corridor_Number', value_vars=tod_cols, var_name='tod', value_name='observed_speed')
     _df_obs = _df_obs[_df_obs['tod'] != 'ff_spd']
@@ -312,15 +326,15 @@ def main():
     # Set TOD
     tod_dict = {
         # hour of observed data represents start hour
-    	'5am_spd': '5to6',
-    	'6am_spd': '6to7',
-    	'7am_spd': '7to8',
-    	'8am_spd': '8to9',
-    	'9am_spd': '9to10',
-    	'3pm_spd': '15to16',
-    	'4pm_spd': '16to17',
-    	'5pm_spd': '17to18',
-    	'6pm_spd_7pm_spd_avg': '18to20',
+        '5am_spd': '5to6',
+        '6am_spd': '6to7',
+        '7am_spd': '7to8',
+        '8am_spd': '8to9',
+        '9am_spd': '9to10',
+        '3pm_spd': '15to16',
+        '4pm_spd': '16to17',
+        '5pm_spd': '17to18',
+        '6pm_spd_7pm_spd_avg': '18to20',
     }
     _df_obs['tod'] = _df_obs['tod'].map(tod_dict)
 
@@ -328,16 +342,16 @@ def main():
     _df.drop(tod_cols, axis=1, inplace=True)
 
     # Get the corridor number from the flag file
-    flag_lookup_df = pd.melt(df_obs[['Corridor_Number','Flag1', 'Flag2','Flag3','Flag4','Flag5','Flag6']], 
-    		id_vars='Corridor_Number', value_vars=['Flag1', 'Flag2','Flag3','Flag4','Flag5','Flag6'], 
-    		var_name='flag_number', value_name='flag_value')
+    flag_lookup_df = pd.melt(df_obs[['Corridor_Number','Flag1', 'Flag2','Flag3','Flag4','Flag5','Flag6']],
+    id_vars='Corridor_Number', value_vars=['Flag1', 'Flag2','Flag3','Flag4','Flag5','Flag6'], 
+    var_name='flag_number', value_name='flag_value')
 
     df_speed = df_model.merge(flag_lookup_df,left_on='@corridorid',right_on='flag_value')
 
     # Note that we need to separate out the Managed HOV lanes
     df_speed = df_speed[df_speed['@is_managed'] == 0]
 
-    df_speed = df_speed.groupby(['Corridor_Number','tod']).sum()[['auto_time','length']].reset_index()
+    df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['Corridor_Number','tod']).sum()[['auto_time','length']].reset_index()
     df_speed['model_speed'] = (df_speed['length']/df_speed['auto_time'])*60
     df_speed = df_speed[(df_speed['model_speed'] < 80) & ((df_speed['model_speed'] > 0))]
 
@@ -346,6 +360,23 @@ def main():
 
     df_speed.plot(kind='scatter', y='model_speed', x='observed_speed')
     df_speed.to_csv(r'outputs\validation\corridor_speeds.csv', index=False)
+
+    # By County
+    df_speed = df_model.merge(flag_lookup_df,left_on='@corridorid',right_on='flag_value')
+
+    # Note that we need to separate out the Managed HOV lanes
+    df_speed = df_speed[df_speed['@is_managed'] == 0]
+
+    df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['countyid','Corridor_Number','tod']).sum()[['auto_time','length']].reset_index()
+    df_speed['model_speed'] = (df_speed['length']/df_speed['auto_time'])*60
+    df_speed = df_speed[(df_speed['model_speed'] < 80) & ((df_speed['model_speed'] > 0))]
+
+    # Join to the observed data
+    df_speed = df_speed.merge(_df,on=['Corridor_Number','tod'])
+    df_speed['county'] = df_speed['countyid'].map(county_lookup)
+
+    df_speed.plot(kind='scatter', y='model_speed', x='observed_speed')
+    df_speed.to_csv(r'outputs\validation\corridor_speeds_county.csv', index=False)
 
     ########################################
     # ACS Comparisons
