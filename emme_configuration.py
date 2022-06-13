@@ -23,7 +23,7 @@ shadow_con = 30 #%RMSE for shadow pricing to consider being converged
 ################################### 
 MIN_EXTERNAL = 3733      #zone of externals (subtract 1 because numpy is zero-based)
 MAX_EXTERNAL = 3750      #zone of externals (subtract 1 because numpy is zero-based)
-HIGH_TAZ = 3700
+HIGH_TAZ = 3593          #index (not zone labels) where internal zones end
 LOW_PNR = 3751
 HIGH_PNR = 4000
 SEATAC = 983
