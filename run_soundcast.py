@@ -192,6 +192,70 @@ def daysim_assignment(iteration):
         if returncode != 0:
             sys.exit(1)
 
+
+def daysim_popsampler(option):
+    #read zone district cross file
+    zone_district = pd.read_csv(os.path.join(zone_district_file), usecols = ['taz','geog_name'] )
+    zone_district.columns = ['zone_id','district']
+    zone_district['sample_rate'] = 0 #initialize
+
+    #get districts for sampling population
+    districts = pop_sample_district.keys()
+
+    #assign sampling rate
+    for district in districts:
+        zone_district.loc[zone_district['district'] == district, 'sample_rate'] = pop_sample_district[district][option-1] #option-1, as index starts from 0
+
+    #output a text file for popsampler to use
+    zone_district[['zone_id','sample_rate']].to_csv(os.path.join(taz_sample_rate_file), index = False, sep = '\t')
+
+    #find sythetic population filename
+    config_template_path = "daysim_configuration_template.properties"
+    
+    #read daysim properties
+    abs_config_template_path = os.path.join(os.getcwd(), config_template_path)
+    with open(abs_config_template_path, 'r') as config:
+        for line in config:
+            #print line
+            settings = line.split('=')
+            #don't process setting headers
+            if len(settings)> 1:
+                variable = settings[0].strip()
+                value = settings[1].strip()
+                #popsyn file setting
+                if variable == 'HDF5Filename':
+                    popsyn_file = value
+                    
+    #run popsampler
+    popsyn_in_file = households_persons_file#.split("\\")[-1]
+    popsyn_out_file = os.path.join(r'inputs\model\roster','hh_and_persons_sampled.h5')
+    returncode = subprocess.call([sys.executable,'scripts/popsampler.py',taz_sample_rate_file, popsyn_in_file, popsyn_out_file])
+        
+    if returncode != 0:
+        print('ERROR: population sampler did not work')
+        logger.info(("ERROR: population sampler did not work"))
+        sys.exit(1)
+    else:
+        print('Created new popsyn file')
+        logger.info(("Created new popsyn file"))
+        
+    #update properties file with new popsyn file
+    config_path = config_template_path
+    abs_config_path = os.path.join(os.getcwd(), config_path)
+
+    #read config file
+    filedata=None
+    with open(abs_config_path, 'r') as config:
+        filedata = config.read()
+
+    #replace popsyn file name
+    if filedata.find(popsyn_file) >= 0:
+        filedata = filedata.replace(popsyn_file, popsyn_out_file.split("\\")[-1])
+
+    #write the file out again
+    with open(abs_config_path, 'w') as config:
+        config.write(filedata)
+
 @timed
 def check_convergence(iteration, recipr_sample):
     converge = "not yet"
@@ -265,6 +329,10 @@ def main():
     ########################################
 
     if (run_daysim or run_skims_and_paths):
+        #run daysim popsampler
+        if run_daysim_popsampler:
+            daysim_popsampler(sampling_option)
+    
         for iteration in range(len(pop_sample)):
 
             print("We're on iteration %d" % (iteration))

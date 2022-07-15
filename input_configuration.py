@@ -26,6 +26,7 @@ run_skims_and_paths = True
 run_truck_model = True
 run_supplemental_trips = True
 run_daysim = True
+run_daysim_popsampler = True
 run_summaries = True
 
 ##############################
@@ -43,6 +44,21 @@ include_delivery = False
 ##############################
 add_distance_pricing = False
 distance_rate_dict = {'md': 8.5, 'ev': 8.5, 'am': 13.5, 'ni': 8.5, 'pm': 13.5}
+
+##############################
+# Household Sampling Controls
+##############################
+households_persons_file = r'inputs\scenario\landuse\hh_and_persons.h5'
+# Popsampler - super/sub-sampling in population synthesis
+sampling_option = 2 #1-3: five options available - each option is a column in pop_sample_district below
+pop_sample_district = {'Pierce County':[1,4,2],
+					'King County':[1,0.50,0.50], 
+					'Kitsap County':[1,0.50,0.20], 
+					'Snohomish County':[1,0.50,0.10], 
+					} #population sampling by districts - 3 options to choose from (each option is a column) - base case and two preferred sampling plans
+zone_district_file = r'inputs\model\lookup\county_taz.csv' #input to generate taz_sample_rate_file below
+taz_sample_rate_file = r'inputs\model\lookup\taz_sample_rate.txt' #intermediate output, input to popsampler script
+
 
 ##############################
 # Other Controls
