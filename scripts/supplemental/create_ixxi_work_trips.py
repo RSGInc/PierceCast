@@ -23,7 +23,8 @@ tod_factors = {'5to6' : .04, '6to7' : .075, '7to8' : 0.115, '8to9' : 0.091, '9to
         '18to20' : 0.06, '20to5' : 0.055}
 
 # FIXME: put this somewhere else, DB?
-jblm_taz_list = [3061, 3070, 3346, 3348, 3349, 3350, 3351, 3352, 3353, 3354, 3355, 3356]
+# jblm_taz_list = [3061, 3070, 3346, 3348, 3349, 3350, 3351, 3352, 3353, 3354, 3355, 3356] # PSRC TAZ list
+jblm_taz_list = [169, 988, 989, 990, 991, 979, 980, 981, 982, 983, 984, 985, 986, 1179]
 
 # dictionary to hold taz id and total enlisted to use to update externals
 jbml_enlisted_taz_dict = {}

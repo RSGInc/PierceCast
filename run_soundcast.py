@@ -66,7 +66,7 @@ def accessibility_calcs():
         sys.exit(1)
     print('Done with accessibility calculations')
 
-@timed    
+@timed
 def build_seed_skims(max_iterations):
     print("Processing skims and paths.")
     time_copy = datetime.datetime.now()

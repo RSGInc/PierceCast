@@ -85,7 +85,7 @@ tod_lookup = {  0:'20to5',
                 17:'17to18',
                 18:'18to20',
                 19:'18to20',
-                20:'18to20',
+                20:'20to5',
                 21:'20to5',
                 22:'20to5',
                 23:'20to5',
@@ -267,6 +267,7 @@ def main():
     # Observed screenline data
     df_obs = pd.read_sql("SELECT * FROM observed_screenline_volumes WHERE year=" + str(base_year), con=conn)
     df_obs['observed'] = df_obs['observed'].astype('float')
+    df_obs['screenline_id'] = df_obs['screenline_id'].astype('str')
 
     df_model = pd.read_csv(r'outputs\network\network_results.csv')
     df_model = model_vol_df.copy()
@@ -351,12 +352,13 @@ def main():
     # Note that we need to separate out the Managed HOV lanes
     df_speed = df_speed[df_speed['@is_managed'] == 0]
 
-    df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['Corridor_Number','tod']).sum()[['auto_time','length']].reset_index()
+    df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['Corridor_Number','tod', 'countyid']).sum()[['auto_time','length']].reset_index()
     df_speed['model_speed'] = (df_speed['length']/df_speed['auto_time'])*60
     df_speed = df_speed[(df_speed['model_speed'] < 80) & ((df_speed['model_speed'] > 0))]
 
     # Join to the observed data
     df_speed = df_speed.merge(_df,on=['Corridor_Number','tod'])
+    df_speed['county'] = df_speed['countyid'].map(county_lookup)
 
     df_speed.plot(kind='scatter', y='model_speed', x='observed_speed')
     df_speed.to_csv(r'outputs\validation\corridor_speeds.csv', index=False)

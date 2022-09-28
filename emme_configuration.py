@@ -23,7 +23,7 @@ shadow_con = 30 #%RMSE for shadow pricing to consider being converged
 ################################### 
 MIN_EXTERNAL = 3733      #zone of externals (subtract 1 because numpy is zero-based)
 MAX_EXTERNAL = 3750      #zone of externals (subtract 1 because numpy is zero-based)
-HIGH_TAZ = 3593          #index (not zone labels) where internal zones end
+HIGH_TAZ = 3700          #zone (not index) where internal zones end index 3596 earlier 3593
 LOW_PNR = 3751
 HIGH_PNR = 4000
 SEATAC = 983
@@ -57,7 +57,7 @@ rdly_factor = .25
 coord_unit_length = 0.0001894    # network links measured in feet, converted to miles (1/5280)
 main_log_file = 'soundcast_log.txt'
 
-link_extra_attributes = ['@facilitytype', '@countyid', '@countid', '@corridorid', '@is_managed','@bkfac','@upslp', '@toll1', '@toll2', '@toll3', '@trkc1', '@trkc2', '@trkc3', '@fgts', '@ttf'] 
+link_extra_attributes = ['@facilitytype', '@countyid', '@countid', '@corridorid', '@is_managed','@bkfac','@upslp', '@toll1', '@toll2', '@toll3', '@trkc1', '@trkc2', '@trkc3', '@fgts', '@ttf', '@channelization']
 node_extra_attributes = ['@lr_walk','@hdwfr','@wait','@invt']
 transit_line_extra_attributes = ['@transittype']
 

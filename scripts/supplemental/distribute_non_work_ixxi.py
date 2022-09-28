@@ -136,10 +136,11 @@ def emme_matrix_to_np(trip_purp_list, my_project):
         emme_data = emme_matrix.get_data() # Access emme data as numpy matrix
         emme_data = np.array(emme_data.raw_data, dtype='float64')
         filtered = np.zeros_like(emme_data)
+        START_ZONE_INDEX = dictZoneLookup[HIGH_TAZ]+1
 
         # Add only external rows and columns from emme data
-        filtered[HIGH_TAZ:,:] = emme_data[HIGH_TAZ:,:]
-        filtered[:,HIGH_TAZ:] = emme_data[:,HIGH_TAZ:]
+        filtered[START_ZONE_INDEX:,:] = emme_data[START_ZONE_INDEX:,:]
+        filtered[:,START_ZONE_INDEX:] = emme_data[:,START_ZONE_INDEX:]
         trips_by_purpose[purpose] = filtered
 
     return trips_by_purpose
@@ -170,7 +171,7 @@ def main():
     pm_dist_skim = load_skims('inputs/model/roster/17to18.h5', mode_name='sov_inc1d', divide_by_100=True)
     # Average skims between AM and PM periods
     cost_skim = (am_cost_skim + pm_cost_skim) * .5
-    dist_skim = (am_cost_skim + pm_dist_skim) * .5
+    dist_skim = (am_dist_skim + pm_dist_skim) * .5
    
     # Compute friction factors by trip purpose
     fric_facs = calc_fric_fac(cost_skim, dist_skim, coeff_df)
