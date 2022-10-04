@@ -83,7 +83,8 @@ def runPopSampler(tazSampleRateFileName, popsynFileName, popsynOutFileName):
     #popsynFileName = "hh_and_persons.h5"
     popsynFileName = os.path.join( popsynFileName)
     households, persons = readSynPopTables(popsynFileName)
-
+    households.to_csv(os.path.join(r'E:\projects\clients\PierceCounty\Models\BaseYear\Development\PierceCast_Sampling\inputs\scenario\landuse', 'households_orig.csv'))
+    persons.to_csv(os.path.join(r'E:\projects\clients\PierceCounty\Models\BaseYear\Development\PierceCast_Sampling\inputs\scenario\landuse', 'persons_orig.csv'))
     #join sample rate by home taz
     households = pd.merge(households, sampleRates, left_on="hhtaz", right_on="zone_id")
 
@@ -100,10 +101,10 @@ def runPopSampler(tazSampleRateFileName, popsynFileName, popsynOutFileName):
     
     #update ids and expand persons
     new_households['hhno_new'] = range(1,len(new_households)+1)
-    new_persons = pd.merge(persons, new_households[["hhno","hhno_new"]], left_on="hhno", right_on="hhno", )
+    new_persons = pd.merge(persons, new_households[["hhno","hhno_new","hhexpfac"]], left_on="hhno", right_on="hhno", )
     new_households['hhno'] = new_households['hhno_new'].astype(np.int32)
     new_persons['hhno'] = new_persons['hhno_new'].astype(np.int32)
-
+    new_persons['psexpfac'] = new_persons['hhexpfac']
     #delete added fields
     del new_households['hhno_new']
     del new_households['zone_id']
@@ -111,13 +112,14 @@ def runPopSampler(tazSampleRateFileName, popsynFileName, popsynOutFileName):
     del new_households['hhincbin']
     del new_households['hhsizebin']
     del new_persons['hhno_new']
+    del new_persons['hhexpfac']
     
     #write result file by copying input file and writing over arrays
     #popsynOutFileName = "hh_and_persons_sampled.h5"
     popsynOutFileName = os.path.join( popsynOutFileName)
     shutil.copy2(popsynFileName, popsynOutFileName)
     writeSynPopTables(popsynOutFileName, new_households, new_persons)
-
+    
 if __name__== "__main__":
     #set argument inputs
     taz_sample_rate_file = sys.argv[1]
