@@ -83,8 +83,6 @@ def runPopSampler(tazSampleRateFileName, popsynFileName, popsynOutFileName):
     #popsynFileName = "hh_and_persons.h5"
     popsynFileName = os.path.join( popsynFileName)
     households, persons = readSynPopTables(popsynFileName)
-    households.to_csv(os.path.join(r'E:\projects\clients\PierceCounty\Models\BaseYear\Development\PierceCast_Sampling\inputs\scenario\landuse', 'households_orig.csv'))
-    persons.to_csv(os.path.join(r'E:\projects\clients\PierceCounty\Models\BaseYear\Development\PierceCast_Sampling\inputs\scenario\landuse', 'persons_orig.csv'))
     #join sample rate by home taz
     households = pd.merge(households, sampleRates, left_on="hhtaz", right_on="zone_id")
 
