@@ -26,7 +26,7 @@ MAX_EXTERNAL = 3750      #zone of externals (subtract 1 because numpy is zero-ba
 HIGH_TAZ = 3700          #zone (not index) where internal zones end index 3596 earlier 3593
 LOW_PNR = 3751
 HIGH_PNR = 4000
-SEATAC = 983
+SEATAC = 2565
 EXTERNALS_DONT_GROW=[3733]
 
 #####################################
