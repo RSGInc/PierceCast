@@ -27,11 +27,16 @@ def calc_fric_fac(cost_skim, dist_skim, _coeff_df):
     ''' Calculate friction factors for all trip purposes '''
     friction_fac_dic = {}
     MIN_EXTERNAL_INDEX=dictZoneLookup[MIN_EXTERNAL]
+    MAX_EXTERNAL_INDEX=dictZoneLookup[MAX_EXTERNAL]
+    LOW_PNR_INDEX=dictZoneLookup[LOW_PNR]
     for index, row in _coeff_df.iterrows():
         friction_fac_dic[row['purpose']] = np.exp((row['coefficient_value'])*(cost_skim + (dist_skim * autoop * avotda)))
-        ## Set external zones to zero to prevent external-external trips
+        ## Set external zones to zero to prevent external-external trips.
+        ## Friction factors are already calucated to be zero but this step will ensure that are definitely zero
         friction_fac_dic[row['purpose']][MIN_EXTERNAL_INDEX:,MIN_EXTERNAL_INDEX:] = 0
-        # friction_fac_dic[row['purpose']][:,MIN_EXTERNAL_INDEX:] = 0
+        ## Set everything to PNR nodes to zero
+        friction_fac_dic[row['purpose']][LOW_PNR_INDEX:,:] = 0
+        friction_fac_dic[row['purpose']][:,LOW_PNR_INDEX:] = 0
 
     return friction_fac_dic
 
