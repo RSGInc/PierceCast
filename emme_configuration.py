@@ -4,7 +4,9 @@
 # Assignment Criteria
 ################################### 
 log_file_name = 'outputs/logs/skims_log.txt'
-STOP_THRESHOLD = 0.026    # Global convergence criteria
+USE_PIERCECAST_STOPTHRESH_STRATEGY = True
+STOP_THRESHOLD = 0.026         # Global convergence criteria (Pierce County specific)
+STOP_THRESHOLD_REST = 0.035    # Global convergence criteria (Remaining counties)
 parallel_instances = 12   # Number of simultaneous parallel processes. Must be a factor of 12.
 max_iter = 50             # Max number of iterations for assignment
 relative_gap = 0.0001      # Assignment Convergence Criteria
@@ -24,6 +26,7 @@ shadow_con = 30 #%RMSE for shadow pricing to consider being converged
 MIN_EXTERNAL = 3733      #zone of externals (subtract 1 because numpy is zero-based)
 MAX_EXTERNAL = 3750      #zone of externals (subtract 1 because numpy is zero-based)
 HIGH_TAZ = 3700          #zone (not index) where internal zones end index 3596 earlier 3593
+MAX_PIERCECOUNTY_TAZ = 1658
 LOW_PNR = 3751
 HIGH_PNR = 4000
 SEATAC = 2565

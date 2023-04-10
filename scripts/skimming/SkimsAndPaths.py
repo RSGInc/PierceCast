@@ -785,7 +785,7 @@ def create_trip_tod_indices(tod):
     uniqueTOD = set(tod_dict.values())
     todIDListdict = {}
      
-     # Create a dictionary where the TOD string, e.g. 18to20, is the key, and the value is a list of the hours for that period, e.g [18, 19, 20]
+     # Create a dictionary where the TOD string, e.g. 18to20, is the key, and the value is a list of the hours for that period, e.g [18, 19]
     for k, v in tod_dict.items():
         todIDListdict.setdefault(v, []).append(k)
 
@@ -993,6 +993,10 @@ def feedback_check(emmebank_path_list):
      for emmebank_path in emmebank_path_list:
         my_bank =  _eb.Emmebank(emmebank_path)
         tod = my_bank.title
+        current_scenario = list(my_bank.scenarios())[0]
+        zones = current_scenario.zone_numbers
+        dictZoneLookup = dict((value,index) for index,value in enumerate(zones))
+        max_piercecounty_zone_index = dictZoneLookup[MAX_PIERCECOUNTY_TAZ]+1
         my_store=h5py.File('inputs/model/roster/' + tod + '.h5', "r+")
         #put current time skims in numpy:
         skims_dict = {}
@@ -1013,11 +1017,44 @@ def feedback_check(emmebank_path_list):
                 #now old skims
                 old_skim = np.asmatrix(my_store['Skims'][matrix_name])
 
-                change_test=np.sum(np.multiply(np.absolute(new_skim-old_skim),trips))/np.sum(np.multiply(old_skim,trips))
+                # Perform change test
+                change_weighted = np.multiply(np.absolute(new_skim-old_skim),trips)
+                old_skim_weighted = np.multiply(old_skim,trips)
+                # Pierce County specific change test
+                # Within Pierce County
+                change_weighted_within_pc = change_weighted[:max_piercecounty_zone_index,:max_piercecounty_zone_index]
+                old_skim_weighted_within_pc = old_skim_weighted[:max_piercecounty_zone_index,:max_piercecounty_zone_index]
+                # From Pierce County
+                change_weighted_from_pc = change_weighted[:max_piercecounty_zone_index,:]
+                old_skim_weighted_from_pc = old_skim_weighted[:max_piercecounty_zone_index,:]
+                # To Pierce County
+                change_weighted_to_pc = change_weighted[:,:max_piercecounty_zone_index]
+                old_skim_weighted_to_pc = old_skim_weighted[:,:max_piercecounty_zone_index]
+                # Pierce County specific change test
+                change_test_pierce=(np.sum(change_weighted_within_pc) + np.sum(change_weighted_from_pc) + np.sum(change_weighted_to_pc))/(np.sum(old_skim_weighted_within_pc) + np.sum(old_skim_weighted_from_pc) + np.sum(old_skim_weighted_to_pc))
+                # Rest of the region change test change test
+                # Within rest of the region
+                change_weighted_within_rest = change_weighted[max_piercecounty_zone_index:,max_piercecounty_zone_index:]
+                old_skim_weighted_within_rest = old_skim_weighted[max_piercecounty_zone_index:,max_piercecounty_zone_index:]
+                ## From rest of the counties
+                #change_weighted_from = change_weighted[max_piercecounty_zone_index:,]
+                #old_skim_weighted_from = old_skim_weighted[max_piercecounty_zone_index:,]
+                ## To rest of the counties
+                #change_weighted_to = change_weighted[,max_piercecounty_zone_index:]
+                #old_skim_weighted_to = old_skim_weighted[,max_piercecounty_zone_index:]
+                # Rest of the counties specific change test
+                change_test_rest=np.sum(change_weighted_within_rest)/np.sum(old_skim_weighted_within_rest)
+                # Overall change test
+                change_test = (np.sum(change_weighted_within_pc) + np.sum(change_weighted_from_pc) + np.sum(change_weighted_to_pc) + np.sum(change_weighted_within_rest))/(np.sum(old_skim_weighted_within_pc) + np.sum(old_skim_weighted_from_pc) + np.sum(old_skim_weighted_to_pc) + np.sum(old_skim_weighted_within_rest))
 
-                text = tod + " " + str(change_test) + " " + matrix_name
+                text = tod + "\tpierce county\t" + str(change_test_pierce) + " " + matrix_name + "\n" 
+                text = text + tod + "\tother counties\t" + str(change_test_rest) + " " + matrix_name + "\n"
+                text = text + tod + "\tall counties\t" + str(change_test) + " " + matrix_name
                 logging.debug(text)
-                if change_test > STOP_THRESHOLD:
+                if (change_test_pierce > STOP_THRESHOLD) & (change_test_rest > (STOP_THRESHOLD_REST)) & USE_PIERCECAST_STOPTHRESH_STRATEGY:
+                    passed = False
+                    break
+                if (change_test > STOP_THRESHOLD) & (not USE_PIERCECAST_STOPTHRESH_STRATEGY):
                     passed = False
                     break
 
