@@ -7,7 +7,7 @@ model_year = '2018'
 base_year = '2018'
 landuse_inputs = 'land_use_2018'
 network_inputs = 'networks_2018'
-soundcast_inputs_dir = 'R:/e2projects_two/SoundCast/Inputs/dev'
+soundcast_inputs_dir = 'E:/projects/clients/PierceCounty/GitHub/PierceCastScenarioInputs/inputs'
 
 ##############################
 # Initial Setup

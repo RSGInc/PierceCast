@@ -134,6 +134,13 @@ def main():
     df_agency.to_csv(os.path.join(validation_output_dir,'daily_boardings_by_agency.csv'), 
                         index=False, columns=['agency', 'county','observed_5to20','modeled_5to20','diff','perc_diff'])
 
+    # Boardings by route for PierceTransit
+    df_piercetransit = df.groupby(['agency', 'route_code', 'county', 'description']).sum().reset_index()
+    df_piercetransit['diff'] = df_piercetransit['modeled_5to20']-df_piercetransit['observed_5to20']
+    df_piercetransit['perc_diff'] = df_piercetransit['diff']/df_piercetransit['observed_5to20']
+    df_piercetransit.to_csv(os.path.join(validation_output_dir,'daily_boardings_by_route.csv'), 
+                        index=False, columns=['agency', 'route_code', 'description', 'county','observed_5to20','modeled_5to20','diff','perc_diff'])
+
     # Boardings for special lines
     df_special = df[df['route_code'].isin(special_route_list)]
     df_special.to_csv(os.path.join(validation_output_dir,'daily_boardings_key_routes.csv'), 
