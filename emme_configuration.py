@@ -4,9 +4,9 @@
 # Assignment Criteria
 ################################### 
 log_file_name = 'outputs/logs/skims_log.txt'
-USE_PIERCECAST_STOPTHRESH_STRATEGY = True
-STOP_THRESHOLD = 0.026         # Global convergence criteria (Pierce County specific)
-STOP_THRESHOLD_REST = 0.035    # Global convergence criteria (Remaining counties)
+USE_PIERCECAST_STOPTHRESH_STRATEGY = True # True - Strategy 2; False - Strategy 1
+STOP_THRESHOLD = 0.026         # Strategy 1 - Global convergence criteria; Strategy 2 - Pierce County convergence criteria
+STOP_THRESHOLD_REST = 0.035    # Strategy 2 - Remaining Counties convergence criteria
 parallel_instances = 12   # Number of simultaneous parallel processes. Must be a factor of 12.
 max_iter = 50             # Max number of iterations for assignment
 relative_gap = 0.0001      # Assignment Convergence Criteria
