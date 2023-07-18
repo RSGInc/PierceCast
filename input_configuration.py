@@ -38,6 +38,7 @@ tnc_av = False    # TNCs (if available) are AVs
 include_tnc_to_transit = False # AV to transit path type allowed
 include_knr_to_transit = False # Kiss and Ride to Transit
 include_delivery = False
+include_telecommute = False
 
 ##############################
 # Pricing
