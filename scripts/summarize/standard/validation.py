@@ -358,6 +358,8 @@ def main():
 
     # Note that we need to separate out the Managed HOV lanes
     df_speed = df_speed[df_speed['@is_managed'] == 0]
+    # no walk modes
+    df_speed = df_speed[~df_speed['modes'].isin(['wk','kw'])]
 
     df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['Corridor_Number','tod', 'countyid']).sum()[['auto_time','length']].reset_index()
     df_speed['model_speed'] = (df_speed['length']/df_speed['auto_time'])*60
@@ -375,6 +377,8 @@ def main():
 
     # Note that we need to separate out the Managed HOV lanes
     df_speed = df_speed[df_speed['@is_managed'] == 0]
+    # no walk modes
+    df_speed = df_speed[~df_speed['modes'].isin(['wk','kw'])]
 
     df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['countyid','Corridor_Number','tod']).sum()[['auto_time','length']].reset_index()
     df_speed['model_speed'] = (df_speed['length']/df_speed['auto_time'])*60
