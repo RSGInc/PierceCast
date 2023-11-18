@@ -1407,7 +1407,7 @@ def main():
     # represent a Time of Day string, such as 6to7, 7to8, 9to10, etc.
     start_of_run = time.time()
     pool_list = []
-    for i in range (0, 12, parallel_instances):
+    for i in range (0, len(tods), parallel_instances):
         l = project_list[i:i+parallel_instances]
         pool_list.append(start_pool(l))
     #run_assignments_parallel('projects/8to9/8to9.emp')
@@ -1440,7 +1440,7 @@ def main():
         go = 'continue'
         json.dump(go, f)
     # export skims even if skims converged
-    for i in range (0, 12, parallel_instances):
+    for i in range (0, len(tods), parallel_instances):
         l = project_list[i:i+parallel_instances]
         export_to_hdf5_pool(l)
     #average_skims_to_hdf5_concurrent(EmmeProject('projects/7to8/7to8.emp'), False)
