@@ -558,10 +558,14 @@ def main():
         _network_df['tod'] = my_project.tod
         network_df = network_df.append(_network_df)
 
-    output_dict = {network_results_path: network_df, iz_vol_path: df_iz_vol,
-                    transit_line_path: df_transit_line,
-                    transit_node_path: df_transit_node,
-                    transit_segment_path: df_transit_segment}
+    attribute_aggregate_list = [attribute_name for attribute_name in attribute_aggregate_list if attribute_name in network_df.columns]
+    network_daily_df = network_df[~network_df.modes.isin(['xk','kx'])].groupby(['i_node', 'j_node', 'ij'], as_index=False)[attribute_aggregate_list].sum()
+    output_dict = {network_results_path: network_df, 
+                   network_daily_results_path: network_daily_df,
+                   iz_vol_path: df_iz_vol,
+                   transit_line_path: df_transit_line,
+                   transit_node_path: df_transit_node,
+                   transit_segment_path: df_transit_segment}
 
     # Append hourly results to file output
     for filepath, df in output_dict.items():
