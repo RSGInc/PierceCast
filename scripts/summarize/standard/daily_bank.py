@@ -196,6 +196,8 @@ def main():
        if extra_attribute not in keep_atts:
            daily_scenario.delete_extra_attribute(extra_attribute)
     daily_volume_attr = daily_scenario.create_extra_attribute('LINK', '@tveh')
+    daily_volume_attr = daily_scenario.create_extra_attribute('LINK', '@mveh')
+    daily_volume_attr = daily_scenario.create_extra_attribute('LINK', '@hveh')
     daily_network = daily_scenario.get_network()
 
     for tod, time_period in sound_cast_net_dict.items():
@@ -208,6 +210,16 @@ def main():
        attr = daily_scenario.create_extra_attribute('LINK', '@v' + tod)
        values = scenario.get_attribute_values('LINK', ['@tveh'])
        daily_scenario.set_attribute_values('LINK', [attr], values)
+       if daily_scenario.extra_attribute('@mveh' + tod):
+           daily_scenario.delete_extra_attribute('@mveh' + tod)
+       attr = daily_scenario.create_extra_attribute('LINK', '@mveh' + tod)
+       values = scenario.get_attribute_values('LINK', ['@mveh'])
+       daily_scenario.set_attribute_values('LINK', [attr], values)
+       if daily_scenario.extra_attribute('@hveh' + tod):
+           daily_scenario.delete_extra_attribute('@hveh' + tod)
+       attr = daily_scenario.create_extra_attribute('LINK', '@hveh' + tod)
+       values = scenario.get_attribute_values('LINK', ['@hveh'])
+       daily_scenario.set_attribute_values('LINK', [attr], values)
 
     daily_network = daily_scenario.get_network()
     attr_list = ['@tv' + x for x in tods]
@@ -215,6 +227,8 @@ def main():
     for link in daily_network.links():
        for item in tods:
            link['@tveh'] = link['@tveh'] + link['@v' + item]
+           link['@mveh'] = link['@mveh'] + link['@mveh' + item]
+           link['@hveh'] = link['@hveh'] + link['@hveh' + item]
     daily_scenario.publish_network(daily_network, resolve_attributes=True)
 
     # Write daily link-level results
