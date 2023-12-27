@@ -21,6 +21,15 @@ shadow_work = [2, 1, 1, 1]
 shadow_con = 30 #%RMSE for shadow pricing to consider being converged
 
 ###################################
+# Link Selection Criteria
+################################### 
+select_link = [{"expression": "link=83730,83928 or link=83928,83730", "suffix": "1"}]
+select_link_tods = ['16to17', '17to18']
+
+
+# select_link = [{"expression": "link=83730,83928 or link=83928,83730", "suffix": "1"}, {"expression": "link=58160,60436", "suffix": "2"}]
+
+###################################
 # Zone Defintions
 ################################### 
 MIN_EXTERNAL = 3733      #zone of externals (subtract 1 because numpy is zero-based)
@@ -56,7 +65,7 @@ extra_attributes_dict = {'@tveh' : 'total vehicles',
                          '@bveh' : 'number of buses'}
                          
 unit_of_length = 'mi'    # units of miles in Emme
-rdly_factor = .25
+rdly_factor = .5
 coord_unit_length = 0.0001894    # network links measured in feet, converted to miles (1/5280)
 main_log_file = 'piercecast_log.txt'
 
