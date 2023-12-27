@@ -30,6 +30,11 @@ run_daysim_popsampler = True
 run_summaries = True
 
 ##############################
+# Model Analysis Procedures
+##############################
+run_select_link_analysis = True
+
+##############################
 # Modes and Path Types
 ##############################
 include_av = False

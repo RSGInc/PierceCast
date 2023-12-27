@@ -192,6 +192,14 @@ def daysim_assignment(iteration):
         if returncode != 0:
             sys.exit(1)
 
+@timed
+def select_link_analysis():
+    logger.info("Start of select link analysis")
+    returncode = subprocess.call([sys.executable, 'scripts/analysis/SelectLinkAnalysis.py'])
+    logger.info("End of select link analysis")
+    if returncode != 0:
+        sys.exit(1)
+
 
 def daysim_popsampler(option):
     #read zone district cross file
@@ -364,6 +372,9 @@ def main():
                 print("System converged!")
                 break
             print('The system is not yet converged. Daysim and Assignment will be re-run.')
+
+    if run_select_link_analysis:
+        select_link_analysis()
 
     # If building shadow prices, update work and school shadow prices
     # using converged skims from current run, then re-run daysim and assignment.

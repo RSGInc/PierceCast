@@ -211,7 +211,7 @@ def copy_accessibility_files():
                 sys.exit(1)
 
 def build_output_dirs():
-    for path in ['outputs',r'outputs/daysim','outputs/bike','outputs/network','outputs/transit', 'outputs/landuse','outputs/emissions', r'outputs/trucks', 'outputs/supplemental']:
+    for path in ['outputs',r'outputs/daysim','outputs/bike','outputs/network','outputs/transit', 'outputs/landuse','outputs/emissions', r'outputs/trucks', 'outputs/supplemental', 'outputs/sla_results']:
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -301,6 +301,16 @@ def update_skim_parameters():
 
     with open(os.path.join(root_path,'auto','attribute_based_skim.json'), 'w') as file:
         file.write(json.dumps(attribute_based_skim_spec, indent=4, sort_keys=True))
+
+    #############################
+    # Select Link Analysis Specs
+    #############################
+
+    # Generate a dictionary for each user class to be assigned
+    select_link_analysis_spec['classes'] = select_link_analysis_spec_class *uc_count
+
+    with open(os.path.join(root_path,'auto','select_link_analysis.json'), 'w') as file:
+        file.write(json.dumps(select_link_analysis_spec, indent=4, sort_keys=True))
 
     #############################
     # Path-Based Volume

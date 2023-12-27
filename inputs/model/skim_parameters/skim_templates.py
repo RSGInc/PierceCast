@@ -73,6 +73,47 @@ attribute_based_skim_spec_class = {
       },
 
 #############################
+# Select Link Analysis Spec
+#############################
+
+select_link_analysis_spec = {
+       "type":"PATH_BASED_TRAFFIC_ANALYSIS",
+       "classes":[],
+       "path_analysis":{
+          "link_component":"length",
+          "turn_component": None, 
+          "operator":".max.",
+          "selection_threshold":{
+             "lower":1,
+             "upper":1
+          },
+          "path_to_od_composition":{
+             "considered_paths":"ALL",
+             "operator":"average"
+          }
+       },
+       "cutoff_analysis": None 
+    }
+
+select_link_analysis_spec_class = {
+         "results":{
+            "od_travel_times":{
+               "shortest_paths": None
+            },
+            "link_volumes": None,
+            "turn_volumes": None
+         },
+         "analysis":{
+            "results":{
+               "selected_demand": None,
+               "selected_link_volumes": None,
+               "selected_turn_volumes": None,
+               "od_values": None
+            }
+         }
+      },
+
+#############################
 # Path-Based Volume
 #############################
 
