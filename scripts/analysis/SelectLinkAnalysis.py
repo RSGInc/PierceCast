@@ -278,6 +278,8 @@ def main():
         lb = select_link_bank_list[i:i+select_link_parallel_num]
         pool_list.append(start_pool(lp, lb))
 
+    if not os.path.exists(os.path.join(os.getcwd(), 'outputs', 'sla_results')):
+        os.makedirs(os.path.join(os.getcwd(), 'outputs', 'sla_results'))
     pool_list = []
     for i in range(0, len(select_link_project_list), select_link_parallel_num):
         lp = select_link_project_list[i:i+select_link_parallel_num]
