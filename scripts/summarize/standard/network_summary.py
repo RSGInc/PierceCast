@@ -243,6 +243,15 @@ def summarize_network(df, writer):
         _df.to_excel(writer, sheet_name=metric+' by FC')
         _df.to_csv(r'outputs/network/' + metric.lower() +'_facility.csv', index=False)
 
+    # Totals by functional classification
+    for metric in ['VMT','VHT','delay']:
+        _df = pd.pivot_table(df, values=metric, index=['tod','period','@countyid'],columns='facility_type', aggfunc='sum').reset_index()
+        _df['county_name'] = _df['@countyid'].map(county_map)
+        _df = sort_df(df=_df, sort_list=tods , sort_column='tod')
+        _df = _df.reset_index(drop=True)
+        _df.to_excel(writer, sheet_name=metric+' by FC & CTY')
+        _df.to_csv(r'outputs/network/' + metric.lower() +'_county_facility.csv', index=False)
+
     # Totals by user classification
 
     # Update uc_list based on inclusion of TNC and AVs
@@ -558,8 +567,8 @@ def main():
         _network_df['tod'] = my_project.tod
         network_df = network_df.append(_network_df)
 
-    attribute_aggregate_list = [attribute_name for attribute_name in attribute_aggregate_list if attribute_name in network_df.columns]
-    network_daily_df = network_df[~network_df.modes.isin(['xk','kx'])].groupby(['i_node', 'j_node', 'ij'], as_index=False)[attribute_aggregate_list].sum()
+    new_attribute_aggregate_list = [attribute_name for attribute_name in attribute_aggregate_list if attribute_name in network_df.columns]
+    network_daily_df = network_df[~network_df.modes.isin(['xk','kx'])].groupby(['i_node', 'j_node', 'ij'], as_index=False)[new_attribute_aggregate_list].sum()
     output_dict = {network_results_path: network_df, 
                    network_daily_results_path: network_daily_df,
                    iz_vol_path: df_iz_vol,
