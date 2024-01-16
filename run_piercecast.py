@@ -373,9 +373,6 @@ def main():
                 break
             print('The system is not yet converged. Daysim and Assignment will be re-run.')
 
-    if run_select_link_analysis:
-        select_link_analysis()
-
     # If building shadow prices, update work and school shadow prices
     # using converged skims from current run, then re-run daysim and assignment.
     if should_build_shadow_price:
@@ -390,6 +387,9 @@ def main():
 
     if run_summaries:
         run_all_summaries()
+
+    if run_select_link_analysis:
+        select_link_analysis()
 
     clean_up()
     print('###### OH HAPPY DAY!  ALL DONE. GO GET ' + random.choice(good_thing))

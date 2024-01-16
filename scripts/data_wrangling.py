@@ -92,6 +92,15 @@ def setup_emme_bank_folders():
 
     tod_dict = text_to_dictionary('time_of_day', 'lookup')
     emmebank_dimensions_dict = json_to_dictionary('emme_bank_dimensions')
+    # Change dimensions based on the number of select link analysis that need to be performed.
+    my_user_classes = json_to_dictionary("user_classes")
+    traffic_classes = len(my_user_classes['Highway'])
+    
+    emmebank_dimensions_dict['extra_attribute_values'] = (len(select_link) * \
+                                                          (((emmebank_dimensions_dict['links']+1)*(traffic_classes+1)) \
+                                                           + ((emmebank_dimensions_dict['turn_entries'] +1)*(traffic_classes)))) \
+                                                            + emmebank_dimensions_dict['extra_attribute_values']
+    emmebank_dimensions_dict['full_matrices'] = (len(select_link) * traffic_classes) + emmebank_dimensions_dict['full_matrices']
 
     # Remove and existing banks 
     if not os.path.exists('Banks'):

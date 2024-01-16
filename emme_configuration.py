@@ -23,11 +23,8 @@ shadow_con = 30 #%RMSE for shadow pricing to consider being converged
 ###################################
 # Link Selection Criteria
 ################################### 
-select_link = [{"expression": "link=83730,83928 or link=83928,83730", "suffix": "1"}]
-select_link_tods = ['16to17', '17to18']
-
-
-# select_link = [{"expression": "link=83730,83928 or link=83928,83730", "suffix": "1"}, {"expression": "link=58160,60436", "suffix": "2"}]
+select_link = [{"expression": "link=136489,135458 or link=135458,136489", "suffix": "1"}]
+select_link_tods = ['5to6', '6to7', '7to8', '8to9', '9to10', '10to14', '14to15', '15to16', '16to17', '17to18', '18to20', '20to5' ]
 
 ###################################
 # Zone Defintions
