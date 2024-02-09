@@ -1263,6 +1263,8 @@ def calc_total_vehicles(my_project):
             str_expression += mode + ' + '
 
     my_project.network_calculator("link_calculation", result='@tveh', expression=str_expression)
+    my_project.network_calculator("link_calculation", result='@vmt', expression='@tveh * length')
+    my_project.network_calculator("link_calculation", result='@vht', expression='@tveh * timau / 60')
 
 
 def get_aadt(my_project):

@@ -61,10 +61,10 @@ def create_emmebank(dir_name):
     traffic_classes = len(my_user_classes['Highway'])
     
     emmebank_dimensions_dict['extra_attribute_values'] = (len(select_link) * \
-                                                          (((emmebank_dimensions_dict['links']+1)*(traffic_classes+1)) \
-                                                           + ((emmebank_dimensions_dict['turn_entries'] +1)*(traffic_classes)))) \
+                                                          (((emmebank_dimensions_dict['links']+3)*(traffic_classes+3)) \
+                                                           + ((emmebank_dimensions_dict['turn_entries'] +3)*(traffic_classes)))) \
                                                             + emmebank_dimensions_dict['extra_attribute_values']
-    emmebank_dimensions_dict['full_matrices'] = (len(select_link) * traffic_classes) + emmebank_dimensions_dict['full_matrices']
+    emmebank_dimensions_dict['full_matrices'] = ((len(select_link)+2) * traffic_classes) + emmebank_dimensions_dict['full_matrices']
     
     path = os.path.join('Banks', dir_name)
     if os.path.exists(path):

@@ -54,11 +54,35 @@ def expand_daily_bank(daily_bank_path):
      my_user_classes = json_to_dictionary("user_classes")
      traffic_classes = len(my_user_classes['Highway'])
 
-     bank_dimensions['extra_attribute_values'] = (len(select_link_tods) * len(select_link) * (((bank_dimensions['links']+1)*(traffic_classes+1))+((bank_dimensions['turn_entries'] +1)*(traffic_classes)))) + bank_dimensions['extra_attribute_values']
+     bank_dimensions['extra_attribute_values'] = (len(select_link_tods) * len(select_link) * (((bank_dimensions['links']+1)*(traffic_classes+3))+((bank_dimensions['turn_entries'] +1)*(traffic_classes+3)))) + bank_dimensions['extra_attribute_values']
      bank_dimensions['full_matrices'] = (len(select_link_tods) * len(select_link) * traffic_classes) + bank_dimensions['full_matrices']
 
      # Change dimension of the daily bank to hold the results
-     _eb.change_dimensions(daily_bank_path, bank_dimensions, keep_backup=True)
+     _eb.change_dimensions(daily_bank_path, bank_dimensions, keep_backup=False)
+
+def export_daily_network(network):
+    _attribute_list = network.attributes('LINK')
+    _attribute_list = [att_name for att_name in _attribute_list if '@sl' in att_name or '@psl' in att_name]  
+
+    network_data = {k: [] for k in _attribute_list}
+    i_node_list = []
+    j_node_list = []
+    for link in network.links():
+        for colname, array in network_data.items():
+            if colname != 'modes':
+                try:
+                    network_data[colname].append(link[colname])  
+                except:
+                    network_data[colname].append(0)
+        i_node_list.append(link.i_node.id)
+        j_node_list.append(link.j_node.id)
+
+    network_data['i_node'] = i_node_list
+    network_data['j_node'] = j_node_list
+    df = pd.DataFrame.from_dict(network_data)
+    df['ij'] = df['i_node'].astype('str') + '-' + df['j_node'].astype('str')
+    return df
+
 
 def add_sla_results_to_daily_bank(project_name):
      my_project = EmmeProject(project_name)
@@ -96,6 +120,8 @@ def add_sla_results_to_daily_bank(project_name):
                 my_project.create_extra_attribute('LINK', daily_link_attr_name, '')
                 daily_network.delete_attribute('LINK', daily_link_attr_name)
                 daily_network.create_attribute('LINK', daily_link_attr_name)
+         
+
 
          #  Get all the turn attributes
          turn_attr_names = [att.name for att in scenario.extra_attributes() if '@psl' in att.name]
@@ -109,31 +135,79 @@ def add_sla_results_to_daily_bank(project_name):
                 my_project.delete_extra_attribute(daily_turn_attr_name)
                 my_project.create_extra_attribute('TURN', daily_turn_attr_name, '')
                 daily_network.delete_attribute('TURN', daily_turn_attr_name)
-                daily_network.create_attribute('TURN', daily_turn_attr_name)
+                daily_network.create_attribute('TURN', daily_turn_attr_name)         
 
          if first_iter:
              first_iter=False
                   
-         for att in daily_network.attributes('LINK'):
+         for att in link_attr_names:
              if '@sl' in att:
                  #  Create a temporary variable to hold value and then add to the original one.
                  tod_value = scenario.get_attribute_values('LINK', [att])
                  temp_att = att + 't'
                  daily_network.create_attribute('LINK', temp_att)
                  daily_network.set_attribute_values('LINK', [temp_att], tod_value)
+                 if 'tveh' in att:
+                    att_name = '@sl_tveh_' + tod
+                    if att_name in daily_network.attributes('LINK'):
+                        daily_network.set_attribute_values('LINK', [att_name], tod_value)
+                    else:
+                        my_project.create_extra_attribute('LINK', att_name, '')
+                        daily_network.create_attribute('LINK', att_name)
+                        daily_network.set_attribute_values('LINK', [att_name], tod_value)
+                 if 'med' in att:
+                    att_name = '@sl_mtrk_' + tod
+                    if att_name in daily_network.attributes('LINK'):
+                        daily_network.set_attribute_values('LINK', [att_name], tod_value)
+                    else:
+                        my_project.create_extra_attribute('LINK', att_name, '')
+                        daily_network.create_attribute('LINK', att_name)
+                        daily_network.set_attribute_values('LINK', [att_name], tod_value)
+                 if 'hvy' in att:
+                    att_name = '@sl_htrk_' + tod
+                    if att_name in daily_network.attributes('LINK'):
+                        daily_network.set_attribute_values('LINK', [att_name], tod_value)
+                    else:
+                        my_project.create_extra_attribute('LINK', att_name, '')
+                        daily_network.create_attribute('LINK', att_name)
+                        daily_network.set_attribute_values('LINK', [att_name], tod_value)
 
                  for link in daily_network.links():
                      link[att] = link[att] + link[temp_att]
                  
                  daily_network.delete_attribute('LINK',temp_att)
 
-         for att in daily_network.attributes('TURN'):
+         for att in turn_attr_names:
              if '@psl' in att:
                  #  Create a temporary variable to hold value and then add to the original one.
                  tod_value = scenario.get_attribute_values('TURN', [att])
                  temp_att = att + 't'       
                  daily_network.create_attribute('TURN', temp_att)
                  daily_network.set_attribute_values('TURN', [temp_att], tod_value)
+                 if 'tveh' in att:
+                    att_name = '@psl_tveh_' + tod
+                    if att_name in daily_network.attributes('TURN'):
+                        daily_network.set_attribute_values('TURN', [att_name], tod_value)
+                    else:
+                        my_project.create_extra_attribute('TURN', att_name, '')
+                        daily_network.create_attribute('TURN', att_name)
+                        daily_network.set_attribute_values('TURN', [att_name], tod_value)
+                 if 'med' in att:
+                    att_name = '@psl_mtrk_' + tod
+                    if att_name in daily_network.attributes('TURN'):
+                        daily_network.set_attribute_values('TURN', [att_name], tod_value)
+                    else:
+                        my_project.create_extra_attribute('TURN', att_name, '')
+                        daily_network.create_attribute('TURN', att_name)
+                        daily_network.set_attribute_values('TURN', [att_name], tod_value)
+                 if 'hvy' in att:
+                    att_name = '@psl_htrk_' + tod
+                    if att_name in daily_network.attributes('TURN'):
+                        daily_network.set_attribute_values('TURN', [att_name], tod_value)
+                    else:
+                        my_project.create_extra_attribute('TURN', att_name, '')
+                        daily_network.create_attribute('TURN', att_name)
+                        daily_network.set_attribute_values('TURN', [att_name], tod_value)
 
                  for turn in daily_network.turns():
                      turn[att] = turn[att] + turn[temp_att]
@@ -145,6 +219,44 @@ def add_sla_results_to_daily_bank(project_name):
      for matrix in my_project.bank.matrices():
          if 'seldem' in matrix.name:
              matrix.set_numpy_data(daily_matrices[matrix.name])
+
+     daily_network = my_project.current_scenario.get_network()
+     network_df = export_daily_network(daily_network)
+     network_df.to_csv('outputs/sla_results/daily_network.csv', index=False)
+
+    #  # Add up all the vehicles and store it in the database
+    #  att = '@sl_tveh'
+    #  if att in daily_network.attributes('LINK'):
+    #     my_project.delete_extra_attribute(att)
+    #     my_project.create_extra_attribute('LINK', att, '')
+    #     daily_network.delete_attribute('LINK', att)
+    #     daily_network.create_attribute('LINK', att)
+    #  else:
+    #     my_project.create_extra_attribute('LINK', att, '')
+    #     daily_network.create_attribute('LINK', att)
+     
+    #  link_expr = ' + '.join([t_att for t_att in daily_network.attributes('LINK') if '@sl' in t_att and 'tveh' not in t_att and 'link' not in t_att])
+    #  my_project.network_calculator("link_calculation", result=att, expression=link_expr, selections_by_link='all')
+
+    #  # Add up all the vehicles and store it in the database
+    #  att = '@psl_tveh'
+    #  if att in daily_network.attributes('TURN'):
+    #     my_project.delete_extra_attribute(att)
+    #     my_project.create_extra_attribute('TURN', att, '')
+    #     daily_network.delete_attribute('TURN', att)
+    #     daily_network.create_attribute('TURN', att)
+    #  else:
+    #     my_project.create_extra_attribute('TURN', att, '')
+    #     daily_network.create_attribute('TURN', att)
+     
+    #  turn_expr = ' + '.join([t_att for t_att in daily_network.attributes('TURN') if '@psl' in t_att and 'tveh' not in t_att and 'link' not in t_att and 'trk' not in t_att])
+    #  NAMESPACE = "inro.emme.network_calculation.network_calculator"
+    #  network_calc = my_project.m.tool(NAMESPACE)
+    #  spec = json_to_dictionary(os.path.join('lookup','link_calculation'))
+    #  spec['result'] = att
+    #  spec['expression'] = turn_expr
+    #  spec['selections'] = {'incoming_link': 'all', 'outgoing_link': 'all'}
+    #  my_project.network_calc_result = network_calc(spec)
 
      return True
 
@@ -209,6 +321,31 @@ def run_select_link(project_name):
             select_link_specification["classes"][x]["analysis"]["results"]["selected_turn_volumes"] = turn_flow         
         
         analyze(select_link_specification)
+
+        tveh_att_name = '@sl_tveh_' + suffix
+        if tveh_att_name not in [att.name for att in my_project.current_scenario.extra_attributes()]:
+            my_project.create_extra_attribute("LINK", tveh_att_name, 'Total vehicles in select link analysis')
+        link_expr = ' + '.join([att.name for att in my_project.current_scenario.extra_attributes() if '@sl' in att.name and 'link' not in att.name and 'tveh' not in att.name])
+        my_project.network_calculator("link_calculation", result=tveh_att_name, expression=link_expr, selections_by_link='all')
+
+        tveh_att_name = '@psl_tveh_' + suffix
+        if tveh_att_name not in [att.name for att in my_project.current_scenario.extra_attributes()]:
+            my_project.create_extra_attribute("TURN", tveh_att_name, 'Total vehicles in select link analysis')
+        turn_expr = ' + '.join([att.name for att in my_project.current_scenario.extra_attributes() if '@psl' in att.name and 'link' not in att.name and 'tveh' not in att.name])
+        NAMESPACE = "inro.emme.network_calculation.network_calculator"
+        network_calc = my_project.m.tool(NAMESPACE)
+        turn_spec = json_to_dictionary(os.path.join('lookup','link_calculation'))
+        turn_spec['result'] = tveh_att_name
+        turn_spec['expression'] = turn_expr
+        turn_spec['selections'] = {'incoming_link': 'all', 'outgoing_link': 'all'}
+        my_project.network_calc_result = network_calc(turn_spec)
+        
+        tveh_matrix_name = 'seldem_tveh_' + suffix
+        if tveh_matrix_name not in full_matrix_names:
+            my_project.create_matrix(tveh_matrix_name, 'Selected demand for all vehicles', 'FULL')
+        matrix_id = my_project.bank.matrix(seldem).id
+        matrix_expr = ' + '.join([classes['analysis']['results']['selected_demand'] for classes in select_link_specification["classes"]])
+        my_project.matrix_calculator(result=matrix_id, expression=matrix_expr)
     
      return True
 
