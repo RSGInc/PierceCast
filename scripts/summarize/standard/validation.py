@@ -256,7 +256,7 @@ def main():
         df_ij['_filter'] = df_ij[colname].apply(lambda x: 1 if 'f' in x or 'p' in x else 0)
         df_ij = df_ij[df_ij['_filter'] == 1]
         
-    df_total = df_ij.groupby('route_code').sum()[['@bvol']].reset_index()
+    df_total = df_ij.groupby('route_code')[['@bvol']].sum().reset_index()
     df_total = df_total.merge(df_ij[['description','route_code']], on='route_code').drop_duplicates('route_code')
     df_total.to_csv(r'outputs\validation\bike_ferry_boardings.csv', index=False)
 
@@ -281,7 +281,7 @@ def main():
     df_model['screenline_id'] = df_model['type'].astype('str')
     # Auburn screenline is the combination of 14 and 15, change label for 14 and 15 to a combined label
     df_model.loc[df_model['screenline_id'].isin(['14','15']),'screenline_id'] = '14/15'
-    _df = df_model.groupby('screenline_id').sum()[['@tveh']].reset_index()
+    _df = df_model.groupby(['screenline_id'])[['@tveh']].sum().reset_index()
 
     _df = _df.merge(df_obs, on='screenline_id')
     _df.rename(columns={'@tveh':'modeled'},inplace=True)
@@ -297,7 +297,7 @@ def main():
     # External stations
     external_stations = range(MIN_EXTERNAL,MAX_EXTERNAL+1)
     df_model = df_model[df_model['@countid'].isin(external_stations)]
-    _df = df_model.groupby('@countid').sum()[['@tveh']].reset_index()
+    _df = df_model.groupby('@countid')[['@tveh']].sum().reset_index()
 
     # Join to observed
     # By Mode
@@ -361,7 +361,7 @@ def main():
     # no walk modes
     df_speed = df_speed[~df_speed['modes'].isin(['wk','kw'])]
 
-    df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['Corridor_Number','tod', 'countyid']).sum()[['auto_time','length']].reset_index()
+    df_speed = df_speed.rename(columns={'@countyid':'countyid'}).groupby(['Corridor_Number','tod', 'countyid'])[['auto_time','length']].sum().reset_index()
     df_speed['model_speed'] = (df_speed['length']/df_speed['auto_time'])*60
     df_speed = df_speed[(df_speed['model_speed'] < 80) & ((df_speed['model_speed'] > 0))]
 
@@ -408,7 +408,7 @@ def main():
     df_model = pd.read_csv(r'outputs\agg\census\auto_ownership_block_group.csv')
     # Record categories to max of 2+
     df_model.loc[df_model['hhvehs'] >= 2, 'hhvehs'] = 2
-    df_model = df_model.groupby(['hhvehs','hh_block_group']).sum()[['hhexpfac']].reset_index()
+    df_model = df_model.groupby(['hhvehs','hh_block_group'])[['hhexpfac']].sum().reset_index()
 
     df_model_sum = df_model.pivot_table(index='hh_block_group', columns='hhvehs', aggfunc='sum', values='hhexpfac')
     df_model_sum = df_model_sum.fillna(0)
@@ -423,7 +423,7 @@ def main():
     df_survey = pd.read_csv(r'outputs\agg\census\survey\auto_ownership_block_group.csv')
     
     df_survey.loc[df_survey['hhvehs'] >= 2, 'hhvehs'] = 2
-    df_survey = df_survey.groupby(['hhvehs','hh_block_group']).sum()[['hhexpfac']].reset_index()
+    df_survey = df_survey.groupby(['hhvehs','hh_block_group'])[['hhexpfac']].sum().reset_index()
 
     df_survey_sum = df_survey.pivot_table(index='hh_block_group', columns='hhvehs', aggfunc='sum', values='hhexpfac')
     df_survey_sum = df_survey_sum.fillna(0)
@@ -435,7 +435,7 @@ def main():
     # Model Data
     df_model = pd.read_csv(r'outputs\agg\census\tour_place.csv')
     df_model = df_model[df_model['pdpurp'] == 'Work']
-    df_model = df_model.groupby(['t_o_place','t_d_place','tmodetp']).sum()[['toexpfac']].reset_index()
+    df_model = df_model.groupby(['t_o_place','t_d_place','tmodetp'])[['toexpfac']].sum().reset_index()
     # rename columns
     df_model.loc[df_model['tmodetp'] == 'SOV','mode'] = 'auto'
     df_model.loc[df_model['tmodetp'] == 'HOV2','mode'] = 'auto'
@@ -443,7 +443,7 @@ def main():
     df_model.loc[df_model['tmodetp'] == 'Transit','mode'] = 'transit'
     df_model.loc[df_model['tmodetp'] == 'Walk','mode'] = 'walk_and_bike'
     df_model.loc[df_model['tmodetp'] == 'Bike','mode'] = 'walk_and_bike'
-    df_model = df_model.groupby(['mode','t_d_place']).sum()[['toexpfac']].reset_index()
+    df_model = df_model.groupby(['mode','t_d_place'])[['toexpfac']].sum().reset_index()
 
     # Observed Data
     df = pd.read_sql("SELECT * FROM acs_commute_mode_by_workplace_geog WHERE year=" + str(base_year), con=conn)
@@ -472,7 +472,7 @@ def main():
     df_model['td_tract'] = df_model['td_tract'].apply(lambda row: row.split('.')[0])
 
     df_model = df_model[df_model['pdpurp'] == 'Work']
-    df_model = df_model.groupby(['to_tract','tmodetp']).sum()[['toexpfac']].reset_index()
+    df_model = df_model.groupby(['to_tract','tmodetp'])[['toexpfac']].sum().reset_index()
 
     # # Group all HOV together
     df_model['mode'] = df_model['tmodetp']

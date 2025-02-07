@@ -208,7 +208,7 @@ def intitial_extra_attributes(my_project):
     # Create the link extra attributes to store volume results
     for x in range (0, len(matrix_dict["Highway"])):
         my_project.create_extra_attribute("LINK", "@"+matrix_dict["Highway"][x]["Name"], matrix_dict["Highway"][x]["Description"], True)
-                     
+    
     # Create the link extra attributes to store the auto equivalent of bus vehicles
     my_project.create_extra_attribute("LINK", "@trnv3", "Transit Vehicles",True)
  
@@ -598,7 +598,7 @@ def hdf5_trips_to_Emme(my_project, hdf_filename):
     tod_index = create_trip_tod_indices(my_project.tod)
 
     #Create the HDF5 Container if needed and open it in read/write mode using "r+"
-    my_store=h5py.File(hdf_filename, "r+")
+    my_store=h5py.File(hdf_filename, "r")
 
     #Read the Matrix File from the Dictionary File and Set Unique Matrix Names
     matrix_dict = text_to_dictionary('demand_matrix_dictionary')
@@ -638,7 +638,7 @@ def hdf5_trips_to_Emme(my_project, hdf_filename):
     pathtype = pathtype.astype('int')
     pathtype = pathtype[tod_index]
 
-    my_store.close
+    my_store.close()
 
     # create & store in-memory numpy matrices in a dictionary. Key is matrix name, value is the matrix
     demand_matrices={}
@@ -656,7 +656,7 @@ def hdf5_trips_to_Emme(my_project, hdf_filename):
     # Create empty demand matrices for other modes without supplemental trips
     for matrix in list(uniqueMatrices):
         if matrix not in demand_matrices.keys():
-            demand_matrix = np.zeros((zonesDim,zonesDim), np.float16)
+            demand_matrix = np.zeros((zonesDim,zonesDim), np.float32)
             demand_matrices.update({matrix : demand_matrix})
 
     # Start going through each trip & assign it to the correct Matrix. Using Otaz, but array length should be same for all
@@ -706,7 +706,7 @@ def hdf5_trips_to_Emme(my_project, hdf_filename):
             mat_name = matrix_dict[(int(mode[x]),int(vot[x]),av_flag)]
             myOtaz = dictZoneLookup[otaz[x]]
             myDtaz = dictZoneLookup[dtaz[x]]
-            trips = np.asscalar(np.float32(trexpfac[x]))
+            trips = np.float32(trexpfac[x]).item()
             trips = round(trips, 2)
 
             # Assign TNC trips using fractional occupancy (factor of 1 for 1 passenger, 0.5 for 2 passengers, etc.)
@@ -750,7 +750,7 @@ def load_trucks(my_project, matrix_name, zonesDim):
     aggregate_time_period = time_dictionary[tod]['TripBasedTime']
     truck_demand_matrix_name = 'mf' + aggregate_time_period + '_' + truck_matrix_name_dict[matrix_name]
 
-    np_matrix = np.matrix(hdf_file[aggregate_time_period][truck_demand_matrix_name]).astype(float)
+    np_matrix = np.matrix(hdf_file[aggregate_time_period][truck_demand_matrix_name]).astype(np.float32)
 
     # Apply time of day factor to convert from aggregate time periods to 12 soundcast periods
     sub_demand_matrix = np_matrix[0:zonesDim, 0:zonesDim]
@@ -766,8 +766,8 @@ def load_supplemental_trips(my_project, matrix_name, zonesDim):
 
     tod = my_project.tod
     # Create empty array to fill with trips
-    demand_matrix = np.zeros((zonesDim,zonesDim), np.float16)
-    hdf_file = h5py.File(os.path.join(supplemental_output_dir,tod + '.h5'), "r")
+    demand_matrix = np.zeros((zonesDim,zonesDim), np.float32)
+    hdf_file = h5py.File(os.path.join(supplemental_output_dir,tod + '.h5'), "r+")
 
     # Open mode-specific array for this TOD and mode
     hdf_array = hdf_file[matrix_name]
@@ -785,12 +785,12 @@ def create_trip_tod_indices(tod):
     uniqueTOD = set(tod_dict.values())
     todIDListdict = {}
      
-     # Create a dictionary where the TOD string, e.g. 18to20, is the key, and the value is a list of the hours for that period, e.g [18, 19]
+     # Create a dictionary where the TOD string, e.g. 18to20, is the key, and the value is a list of the hours for that period, e.g [18, 19, 20]
     for k, v in tod_dict.items():
         todIDListdict.setdefault(v, []).append(k)
 
     # For the given TOD, get the index of all the trips for that Time Period
-    my_store = h5py.File(hdf5_file_path, "r+")
+    my_store = h5py.File(hdf5_file_path, "r")
     daysim_set = my_store["Trip"]
     #open departure time array
     deptm = np.asarray(daysim_set["deptm"])
@@ -997,7 +997,7 @@ def feedback_check(emmebank_path_list):
         zones = current_scenario.zone_numbers
         dictZoneLookup = dict((value,index) for index,value in enumerate(zones))
         max_piercecounty_zone_index = dictZoneLookup[MAX_PIERCECOUNTY_TAZ]+1
-        my_store=h5py.File('inputs/model/roster/' + tod + '.h5', "r+")
+        my_store=h5py.File('inputs/model/roster/' + tod + '.h5', "r")
         #put current time skims in numpy:
         skims_dict = {}
 
@@ -1103,7 +1103,7 @@ def volume_weight(my_project, df):
     over_df = df[df['facility_wt'] < 0].replace(to_replace=aadt_dict)
     over_df['volume_wt'] = 0
     under_df = df[df['facility_wt'] >= 0]
-    df = over_df.append(under_df)
+    df = pd.concat([over_df, under_df])
 
     return df
 
@@ -1164,30 +1164,39 @@ def calc_bike_weight(my_project, link_df):
     ''' Calculate perceived travel time weight for bikes
         based on facility attributes, slope, and vehicle traffic.'''
 
-    # Calculate weight of bike facilities
-    bike_fac_df = bike_facility_weight(my_project, link_df)
+    try:
+        # Calculate weight of bike facilities
+        bike_fac_df = bike_facility_weight(my_project, link_df)
 
-    # Calculate weight from daily traffic volumes
-    vol_df = volume_weight(my_project, bike_fac_df)
+        # Calculate weight from daily traffic volumes
+        vol_df = volume_weight(my_project, bike_fac_df)
 
-    # Calculate weight from elevation gain (for all links)
-    df = process_slope_weight(df=vol_df, my_project=my_project)
+        # Calculate weight from elevation gain (for all links)
+        df = process_slope_weight(df=vol_df, my_project=my_project)
 
-    # Calculate total weights
-    # add inverse of premium bike coeffient to set baseline as a premium bike facility with no slope (removes all negative weights)
-    # add 1 so this weight can be multiplied by original link travel time to produced "perceived travel time"
-    df['total_wt'] = 1 - np.float(facility_dict['facility_wt']['premium']) + df['facility_wt'] + df['slope_wt'] + df['volume_wt']    
+        # Calculate total weights
+        # add inverse of premium bike coeffient to set baseline as a premium bike facility with no slope (removes all negative weights)
+        # add 1 so this weight can be multiplied by original link travel time to produced "perceived travel time"
+        df["total_wt"] = (
+            1
+            - np.float64(facility_dict['facility_wt']['premium'])
+            + df["facility_wt"].astype(float)
+            + df["slope_wt"].astype(float)
+            + df["volume_wt"].astype(float)
+        )
 
-    # Calibrate ferry links
-    _index = df['modes'].str.contains("f")
-    df.loc[_index,'total_wt'] = df['total_wt']*ferry_bike_factor
+        # Calibrate ferry links
+        _index = df["modes"].str.contains("f")
+        df.loc[_index, "total_wt"] = df["total_wt"] * ferry_bike_factor
 
-    # Write link data for analysis
-    
-    df.to_csv(r'outputs/bike/bike_attr_%s.csv' % (my_project.tod,) )
+        # Write link data for analysis
 
-    # export total link weight as an Emme attribute file ('@bkwt.in')
-    write_generalized_time(df, my_project.tod)
+        df.to_csv(r"outputs/bike/bike_attr_%s.csv" % (my_project.tod,))
+
+        # export total link weight as an Emme attribute file ('@bkwt.in')
+        write_generalized_time(df, my_project.tod)
+    except ValueError:
+        sys.exit("calc bike weight failed")
 
 def bike_assignment(my_project, tod):
     ''' Assign bike trips using links weights based on slope, traffic, and facility type, for a given TOD.'''
@@ -1418,7 +1427,7 @@ def main():
     
     daily_link_df = pd.DataFrame()
     for _df in pool_list[0]:
-        daily_link_df = daily_link_df.append(_df)
+        daily_link_df = pd.concat([daily_link_df, _df], axis=0)
         grouped = daily_link_df.groupby(['link_id'])
     daily_link_df = grouped.agg({'@tveh':sum, 'length':min, 'modes':min})
     daily_link_df.reset_index(level=0, inplace=True)
