@@ -23,11 +23,12 @@ from sqlalchemy import column
 
 # inputs
 # wd = r"E:/projects/clients/PierceCounty/GitHub/PierceCastScenarioInputs/inputs/landuse/2050/land_use_2050"
-wd = r"E:/projects/clients/PierceCounty/GitHub/PierceCastScenarioInputs/inputs/landuse/2018/land_use_2018"
+wd = r"input_files\landuse\2023"
 parcel_file = 'parcels_urbansim.txt'
 
 # correspondence file
-parcel_psrc_taz_file = r"data/psrcprcl_pctaz.csv"
+parcel_psrc_taz_file = r"data\psrcprcl_pctaz.csv"
+outdir = "output_files"
 
 # get script's directory
 try:
@@ -58,8 +59,8 @@ def runPSRCtoPSRCZones():
     else:
         #write out the updated parcel file
         parcel_file_out = parcel_file.split(".")[0]+ "_pc.txt"
-        parcel_file_out_path = os.path.join(wd, parcel_file_out)
-        parcels_psrc.to_csv(parcel_file_out_path, sep = ' ', index = False,  line_terminator='\n')
+        parcel_file_out_path = os.path.join(outdir, parcel_file_out)
+        parcels_psrc.to_csv(parcel_file_out_path, sep = ' ', index = False,  lineterminator='\n')
 
 if __name__== "__main__":
     print('started ...')

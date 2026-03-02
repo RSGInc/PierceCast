@@ -1,0 +1,265 @@
+# values
+
+#################################
+# Summary Comparisons
+#################################
+protected_namespaces = '()'
+run_rtp = false
+run_comparison = false
+
+# annualization factor; continuing with value used from Vision 2050
+weekday_to_annual = 300
+
+#################################
+# RELATIVE PATHS between notebooks and output/survey directories
+#################################
+# summary output directory
+p_output_dir = 'outputs/2023_summary'
+
+output_folder = 'outputs'
+survey_folder = 'inputs/base_year/survey'
+
+#################################
+# NETWORK SUMMARY
+#################################
+
+network_results_path = 'outputs/network/network_results.csv'
+network_turn_results_path = 'outputs/network/network_turn_results.csv'
+iz_vol_path = 'outputs/network/iz_vol.csv'
+transit_line_path = 'outputs/transit/transit_line_results.csv'
+transit_node_path = 'outputs/transit/transit_node_results.csv'
+transit_segment_path = 'outputs/transit/transit_segment_results.csv'
+boardings_by_agency_path = 'outputs/transit/daily_boardings_by_agency.csv'
+special_routes_path = 'outputs/transit/daily_boardings_special_routes.csv'
+boardings_by_tod_agency_path = 'outputs/transit/boardings_by_tod_agency.csv'
+boardings_by_stop_path = 'outputs/transit/boardings_by_stop.csv'
+light_rail_boardings_path = 'outputs/transit/light_rail_boardings.csv'
+
+income_bins = [-9999,25000,100000,9999999999]
+income_bin_labels = ['low','medium','high']
+
+uc_list = ['@sov_inc1','@sov_inc2','@sov_inc3',
+            '@hov2_inc1','@hov2_inc2','@hov2_inc3',
+            '@hov3_inc1','@hov3_inc2','@hov3_inc3',
+            '@av_sov_inc1','@av_sov_inc2','@av_sov_inc3',
+            '@av_hov2_inc1','@av_hov2_inc2','@av_hov2_inc3',
+            '@av_hov3_inc1','@av_hov3_inc2','@av_hov3_inc3',
+            '@tnc_inc1','@tnc_inc2','@tnc_inc3','@mveh','@hveh','@bveh']
+
+parcels_file_name = 'inputs/scenario/landuse/parcels_urbansim.txt'
+output_parcels = 'outputs/landuse/buffered_parcels.txt'
+nodes_file_name = 'inputs/accessibility/all_streets_nodes_2014.csv'
+links_file_name = 'inputs/accessibility/all_streets_links_2014.csv'
+max_dist = 24140.2
+
+#################################
+# EMISSIONS SETTINGS
+#################################
+summer_list = [87]
+
+# Set to "standard" to use default database rates
+emissions_scenario = "standard"
+#emissions_scenario = "Y:/Air Quality/2026_2050_RTP/scenarios/2040_full_light_duty_EV/moves_outputs/soundcast"
+
+# Sum of household vehicles predicted by Daysim in base year
+# This is used to scale up the number of vehicles owned in future runs for starting emissions
+tot_veh_model_base_year = 3185281
+
+# Speed bins for emissions
+speed_bins = [
+    -999999.0,
+    2.5,
+    7.5,
+    12.5,
+    17.5,
+    22.5,
+    27.5,
+    32.5,
+    37.5,
+    42.5,
+    47.5,
+    52.5,
+    57.5,
+    62.5,
+    67.5,
+    72.5,
+    999999.0,
+]
+
+#################################
+# run summary notebooks
+#################################
+
+# run jupyter scripts
+summary_list = ['topsheet',
+                'population',
+                'parking',
+                'vmt', 
+                'transit']
+
+RTP_summary_list = ['RTP_person',
+                    'RTP_access',
+                    'RTP_costs',
+                    'RTP_emissions',
+                    'RTP_mode_share'
+                    ]
+
+# current run name and directory
+sc_run_name = "current run"
+sc_run_path = '../../../../'
+# sc_run_name = "2023 base year"
+# sc_run_path = '//modelstation2/c$/Workspace/sc_2023_04_23_25'
+
+# Summary Comparisons: add comparison run directories
+[comparison_runs_list]
+# '2050 new parking' = '\\modelstation1\c$\workspace\sc_2050_new_parking_zones_04_23_25'
+# '2050 update' = '\\modelstation1\c$\workspace\sc_2050_with_2023_telecommute_and_wfh_03_17_25'
+# '2050 RTP' = 'L:\RTP_2022\final_runs\sc_rtp_2050_constrained_final_revised\soundcast'
+
+#################################
+# NETWORK SUMMARY
+#################################
+
+[transit_extra_attributes_dict]
+@board = "total boardings"
+@timtr = "transit line time"
+@length = "transit line length"
+
+[tod_lookup]
+5to6 = 5
+6to7 = 6
+7to8 = 7
+8to9 = 8
+9to10 = 9
+10to14 = 10
+14to15 = 14
+15to16 = 15
+16to17 = 16
+17to18 = 17
+18to20 = 18
+20to5 = 20
+
+[tod_dict]
+5to6 = 'AM'
+6to7 = 'AM'
+7to8 = 'AM'
+8to9 = 'AM'
+9to10 = 'Mid-Day'
+10to14 = 'Mid-Day'
+14to15 = 'Mid-Day'
+15to16 = 'PM'
+16to17 = 'PM'
+17to18 = 'PM'
+18to20 = 'Evening'
+20to5 = 'Night'
+
+[agency_lookup]
+1 = "King County Metro"
+2 = "Pierce Transit"
+3 = "Community Transit"
+4 = "Kitsap Transit"
+5 = "Washington Ferries"
+6 = "Sound Transit"
+7 = "Everett Transit"
+
+[county_map]
+33 = "King"
+35 = "Kitsap"
+53 = "Pierce"
+61 = "Snohomish"
+
+[special_route_lookup]
+1671 = "A-Line Rapid Ride"
+1672 = "B-Line Rapid Ride"
+1673 = "C-Line Rapid Ride"
+1674 = "D-Line Rapid Ride"
+1675 = "E-Line Rapid Ride"
+1677 = "H-Line Rapid Ride"
+4950 = "Central Link"
+6995 = "Tacoma Link"
+6998 = "Sounder South"
+6999 = "Sounder North"
+3701 = "Swift Blue Line"
+3702 = "Swift Green Line"
+
+# Transit Line OD Table list 
+[transit_line_dict]
+118331 = "E Line SB"
+119150 = "Link NB"
+119166 = "Sounder NB"
+118355 = "Metro 40 SB"
+118332 = "WSF Bainbridge to Seattle"
+118342 = "WSF Bremerton to Seattle"
+118363 = "Passenger Ferry Bremerton to Seattle"
+118585 = "Passenger Ferry Vashon Island to Seattle"
+118225 = "Passenger Ferry West Seattle to Seattle"
+118337 = "C Line to Downtown Seattle"
+
+[facility_type_dict]
+1 = 'Highway'
+2 = 'Highway'
+3 = 'Arterial'
+4 = 'Arterial'
+5 = 'Connector'
+6 = 'Arterial'
+
+[purp_dict]
+0 = 'Home'
+1 = 'Work'
+2 = 'School'
+3 = 'Escort'
+4 = 'Personal Business'
+5 = 'Shopping'
+6 = 'Meal'
+7 = 'Social'
+8 = 'Recreational'
+9 = 'Medical'
+10 = 'Change Mode'
+
+[mode_dict]
+1 = 'Walk'
+2 = 'Bike'
+3 = 'SOV'
+4 = 'HOV2'
+5 = 'HOV3+'
+6 = 'Transit'
+8 = 'School Bus'
+
+[fac_type_lookup]
+0 = 0
+1 = 4
+2 = 4
+3 = 5
+4 = 5
+5 = 5
+6 = 3
+7 = 5
+8 = 0
+
+# Map pollutant name and ID
+###
+### FIXME: put in db
+###
+[pollutant_map]
+1 = "Total Gaseous HCs"
+2 = "CO"
+3 = "NOx"
+5 = "Methane"
+6 = "N20"
+79 = "Non-methane HCs"
+87 = "VOCs"
+90 = "Atmospheric CO2"
+91 = "Total Energy"
+98 = "CO2 Equivalent"
+PM10 = "PM10 Total"
+PM25 = "PM25 Total"
+100 = "PM10 Exhaust"
+106 = "PM10 Brakewear"
+107 = "PM10 Tirewear"
+110 = "PM25 Exhaust"
+112 = "Elemental Carbon"
+115 = "Sulfate Particulate"
+116 = "PM25 Brakewear"
+117 = "PM25 Tirewear"
+118 = "Composite NonECPM"
+119 = "H20 Aerosol"

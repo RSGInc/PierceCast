@@ -22,9 +22,10 @@ import numpy as np
 
 #input settings
 # wd = r"E:/projects/clients/PierceCounty/GitHub/PierceCastScenarioInputs/inputs/landuse/2050/land_use_2050"
-wd = r"E:/projects/clients/PierceCounty/GitHub/PierceCastScenarioInputs/inputs/landuse/2018/land_use_2018"
+wd = r"input_files/landuse/2023"
 popsynFileName = "hh_and_persons.h5"
 xwalkFile = r"data/psrcprcl_pctaz.csv"
+outdir = r"output_files"
 
 def reindex(series1, series2):
     """
@@ -116,7 +117,7 @@ def runSynPopPSRCtoPSRCZones():
 
     #write result file by copying input file and writing over arrays
     popsynOutFileName = popsynFileName.split(".")[0]+ "_pc.h5"
-    popsynOutFileName = os.path.join(wd, popsynOutFileName)
+    popsynOutFileName = os.path.join(outdir, popsynOutFileName)
     shutil.copy2(popsynFile, popsynOutFileName)
     writeSynPopTables(popsynOutFileName, households, persons)
 
