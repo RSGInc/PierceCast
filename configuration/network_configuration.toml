@@ -8,6 +8,7 @@ transit_tod_list = ['5to6', '6to7', '7to8', '8to9', '9to10', '10to14', '14to15',
 
 unit_of_length = 'mi'    # units of miles in Emme
 rdly_factor = 0.5
+rdly_label = '@rdly_val'
 coord_unit_length = 0.0001894    # network links measured in feet, converted to miles (1/5280)
 main_log_file = 'seacast_log.txt'
 
