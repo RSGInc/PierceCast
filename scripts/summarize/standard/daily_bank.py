@@ -118,6 +118,7 @@ def main(state):
     daily_scenario = daily_emmebank.scenario(1002)
     daily_network = daily_scenario.get_network()
     database = project.data_explorer.add_database("Banks/Daily/emmebank")
+    project.desktop.project.save()
     database.open()
 
     matrix_dict = text_to_dictionary("demand_matrix_dictionary", state.model_input_dir)

@@ -245,8 +245,10 @@ def run_importer(state):
             update_headways(my_project, headway_df)
 
         print(f"Loading {key} network")
-        for att in state.network_settings.link_extra_attributes:
+        for att in state.network_settings.link_extra_attributes + [state.network_settings.rdly_label]:
             my_project.create_extra_attribute("LINK", att)
+        if state.input_settings.run_select_link_analysis:
+            my_project.create_extra_attribute("LINK", "@slink_id")
         for att in state.network_settings.node_extra_attributes:
             my_project.create_extra_attribute("NODE", att)
         my_project.import_extra_attributes(

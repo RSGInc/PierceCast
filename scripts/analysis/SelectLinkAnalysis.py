@@ -5,65 +5,87 @@ import inro.emme.database.emmebank as _eb
 from multiprocessing import Pool
 import logging
 import traceback
+import pandas as pd
 sys.path.append(os.path.join(os.getcwd(),"scripts"))
 sys.path.append(os.path.join(os.getcwd(),"scripts", "skimming"))
 sys.path.append(os.path.join(os.getcwd(),"inputs"))
 sys.path.append(os.getcwd())
-from emme_configuration import *
-from EmmeProject import *
-from data_wrangling import json_to_dictionary
-from SkimsAndPaths import emmeMatrix_to_numpyMatrix
+from scripts.emme_project import EmmeProject
+from settings.data_wrangling import json_to_dictionary
+from settings import run_args
+from scripts.settings import state
+from skimming.SkimsAndPaths import emmeMatrix_to_numpyMatrix
+import logcontroller
 
-#Create a logging file to report model progress
-logging.basicConfig(filename=log_file_name, level=logging.DEBUG)
+state = state.generate_state(run_args.args.configs_dir)
 
-#Report model starting
-current_time = str(time.strftime("%H:%M:%S"))
-logging.debug('----Began SelectLinkAnalysis script at ' + current_time)
+
+def _get_sla_output_dir():
+    return getattr(state.emme_settings, "select_link_output_dir", "outputs/sla_results")
+
+
+def _normalize_select_link(select_link_spec):
+    normalized = []
+    for idx, item in select_link_spec.items():
+        if isinstance(item, list):
+            expression = item.get("expression", "")
+            suffix = item.get("suffix", "")
+        else:
+            expression = str(item)
+            suffix = "sl"+idx
+        if expression and suffix:
+            normalized.append({"expression": expression, "suffix": suffix})
+    return normalized
+
+
+select_link = _normalize_select_link(state.emme_settings.select_link)
+select_link_tods = state.emme_settings.select_link_tods
+
+def create_select_link_analysis_logger():
+    return logcontroller.setup_custom_logger(
+        "select_link_logger", "outputs/logs/select_link_analysis_log.txt"
+    )
+
+
+select_link_logger = create_select_link_analysis_logger()
 
 def create_hdf5_demand_container(hdf5_name):
     #create containers for TOD skims
     start_time = time.time()
-
-    hdf5_filename = os.path.join('outputs/sla_results', hdf5_name +'.h5').replace("\\","/")
-
+    hdf5_filename = os.path.join(_get_sla_output_dir(), hdf5_name +'.h5').replace("\\","/")
     # IOError will occur if file already exists with "w-", so in this case
     # just prints it exists. If file does not exist, opens new hdf5 file and
     # create groups based on the subgroup list above.
-
     # Create a sub groups with the same name as the container, e.g. 5to6, 7to8
     # These facilitate multi-processing and will be imported to a master HDF5 file
     # at the end of the run
-
     if not os.path.exists(hdf5_filename):
         my_store=h5py.File(hdf5_filename, "w-")
         my_store.create_group(hdf5_name)
         my_store.close()
-
     end_time = time.time()
     text = 'It took ' + str(round((end_time-start_time),2)) + ' seconds to create the HDF5 file.'
-    logging.debug(text)
+    select_link_logger.info(text)
     return hdf5_filename
 
 def expand_daily_bank(daily_bank_path):
-     #Function to perform select link analysis
-     select_link_specification = json_to_dictionary("select_link_analysis", "auto")
+    #Function to perform select link analysis
+    select_link_specification = json_to_dictionary("select_link_analysis", state.model_input_dir, "auto")
 
-     # Change dimensions based on the number of select link analysis that need to be performed.
-     bank_dimensions = json_to_dictionary("emme_bank_dimensions")
-     my_user_classes = json_to_dictionary("user_classes")
-     traffic_classes = len(my_user_classes['Highway'])
+    # Change dimensions based on the number of select link analysis that need to be performed.
+    bank_dimensions = json_to_dictionary("emme_bank_dimensions", state.model_input_dir)
+    my_user_classes = json_to_dictionary("user_classes", state.model_input_dir)
+    traffic_classes = len(my_user_classes['Highway'])
 
-     bank_dimensions['extra_attribute_values'] = (len(select_link_tods) * len(select_link) * (((bank_dimensions['links']+1)*(traffic_classes+3))+((bank_dimensions['turn_entries'] +1)*(traffic_classes+3)))) + bank_dimensions['extra_attribute_values']
-     bank_dimensions['full_matrices'] = (len(select_link_tods) * len(select_link) * traffic_classes) + bank_dimensions['full_matrices']
+    bank_dimensions['extra_attribute_values'] = (len(select_link_tods) * len(select_link) * (((bank_dimensions['links']+1)*(traffic_classes+3))+((bank_dimensions['turn_entries'] +1)*(traffic_classes+3)))) + bank_dimensions['extra_attribute_values']
+    bank_dimensions['full_matrices'] = (len(select_link_tods) * len(select_link) * traffic_classes) + bank_dimensions['full_matrices']
 
-     # Change dimension of the daily bank to hold the results
-     _eb.change_dimensions(daily_bank_path, bank_dimensions, keep_backup=False)
+    # Change dimension of the daily bank to hold the results
+    _eb.change_dimensions(daily_bank_path, bank_dimensions, keep_backup=False)
 
 def export_daily_network(network):
     _attribute_list = network.attributes('LINK')
     _attribute_list = [att_name for att_name in _attribute_list if '@sl' in att_name or '@psl' in att_name]  
-
     network_data = {k: [] for k in _attribute_list}
     i_node_list = []
     j_node_list = []
@@ -84,14 +106,15 @@ def export_daily_network(network):
     return df
 
 
-def add_sla_results_to_daily_bank(project_name):
-     my_project = EmmeProject(project_name)
-     daily_network = my_project.current_scenario.get_network()
-     full_matrix_names = [mat.name for mat in my_project.bank.matrices() if 'seldem' in mat.name]
-     full_attribute_names = [att.name for att in  my_project.current_scenario.extra_attributes() if 'sl' in att.name]
-     daily_matrices = {}
-     first_iter = True
-     for tod in select_link_tods:
+def add_sla_results_to_daily_bank(state):
+    my_project = state.main_project
+    my_project.change_active_database("daily")
+    daily_network = my_project.current_scenario.get_network()
+    full_matrix_names = [mat.name for mat in my_project.bank.matrices() if 'seldem' in mat.name]
+    full_attribute_names = [att.name for att in  my_project.current_scenario.extra_attributes() if 'sl' in att.name]
+    daily_matrices = {}
+    first_iter = True
+    for tod in select_link_tods:
          print('Adding {} to the Daily Bank'.format(tod))
          path = os.path.join('Banks', tod, 'emmebank')
          bank = _eb.Emmebank(path)
@@ -214,15 +237,15 @@ def add_sla_results_to_daily_bank(project_name):
                  
                  daily_network.delete_attribute('TURN',temp_att)
                   
-     my_project.current_scenario.publish_network(daily_network)
-     #  Add matrices to the daily bank
-     for matrix in my_project.bank.matrices():
-         if 'seldem' in matrix.name:
-             matrix.set_numpy_data(daily_matrices[matrix.name])
+    my_project.current_scenario.publish_network(daily_network)
+    #  Add matrices to the daily bank
+    for matrix in my_project.bank.matrices():
+        if 'seldem' in matrix.name:
+            matrix.set_numpy_data(daily_matrices[matrix.name])
 
-     daily_network = my_project.current_scenario.get_network()
-     network_df = export_daily_network(daily_network)
-     network_df.to_csv('outputs/sla_results/daily_network.csv', index=False)
+    daily_network = my_project.current_scenario.get_network()
+    network_df = export_daily_network(daily_network)
+    network_df.to_csv(os.path.join(_get_sla_output_dir(), 'daily_network.csv'), index=False)
 
     #  # Add up all the vehicles and store it in the database
     #  att = '@sl_tveh'
@@ -258,15 +281,15 @@ def add_sla_results_to_daily_bank(project_name):
     #  spec['selections'] = {'incoming_link': 'all', 'outgoing_link': 'all'}
     #  my_project.network_calc_result = network_calc(spec)
 
-     return True
+    return True
 
 def run_select_link(project_name):
-     #Function to perform select link analysis
-     select_link_specification = json_to_dictionary("select_link_analysis", "auto")
+    #Function to perform select link analysis
+    select_link_specification = json_to_dictionary("select_link_analysis", state.model_input_dir, "auto")
 
-     # Change dimensions based on the number of select link analysis that need to be performed.
+    # Change dimensions based on the number of select link analysis that need to be performed.
     #  bank_dimensions = json_to_dictionary("emme_bank_dimensions")
-     my_user_classes = json_to_dictionary("user_classes")
+    my_user_classes = json_to_dictionary("user_classes", state.model_input_dir)
     #  traffic_classes = len(my_user_classes['Highway'])
      
     #  bank_dimensions['extra_attribute_values'] = (len(select_link) * (((bank_dimensions['links']+1)*(traffic_classes+1))+((bank_dimensions['turn_entries'] +1)*(traffic_classes)))) + bank_dimensions['extra_attribute_values']
@@ -275,11 +298,11 @@ def run_select_link(project_name):
     #  # Change dimension of the bank to do select link analysis
     #  _eb.change_dimensions(bank_path, bank_dimensions, keep_backup=True)
 
-     my_project = EmmeProject(project_name)
+    my_project = EmmeProject(project_name, state.model_input_dir)
 
-     analyze = my_project.m.tool("inro.emme.traffic_assignment.path_based_traffic_analysis")
+    analyze = my_project.m.tool("inro.emme.traffic_assignment.path_based_traffic_analysis")
      
-     for sub_spec in select_link:
+    for sub_spec in select_link:
         expr = sub_spec["expression"]
         suffix = sub_spec["suffix"]
         if not expr and not suffix:
@@ -313,7 +336,7 @@ def run_select_link(project_name):
             if seldem not in full_matrix_names:
                 text = my_project.tod + ': ' + 'Creating Matrix: ' + seldem
                 print(text)
-                logging.debug(text)
+                select_link_logger.info(text)
                 my_project.create_matrix(seldem, desc, 'FULL')
             matrix_id = my_project.bank.matrix(seldem).id
             select_link_specification["classes"][x]["analysis"]["results"]["selected_demand"] = matrix_id
@@ -334,7 +357,7 @@ def run_select_link(project_name):
         turn_expr = ' + '.join([att.name for att in my_project.current_scenario.extra_attributes() if '@psl' in att.name and 'link' not in att.name and 'tveh' not in att.name])
         NAMESPACE = "inro.emme.network_calculation.network_calculator"
         network_calc = my_project.m.tool(NAMESPACE)
-        turn_spec = json_to_dictionary(os.path.join('lookup','link_calculation'))
+        turn_spec = json_to_dictionary('link_calculation', state.model_input_dir, 'lookup')
         turn_spec['result'] = tveh_att_name
         turn_spec['expression'] = turn_expr
         turn_spec['selections'] = {'incoming_link': 'all', 'outgoing_link': 'all'}
@@ -347,7 +370,7 @@ def run_select_link(project_name):
         matrix_expr = ' + '.join([classes['analysis']['results']['selected_demand'] for classes in select_link_specification["classes"]])
         my_project.matrix_calculator(result=matrix_id, expression=matrix_expr)
     
-     return True
+    return True
 
 def start_pool(select_link_project_list):
     #An Emme databank can only be used by one process at a time. Emme Modeler API only allows one instance of Modeler and
@@ -411,7 +434,7 @@ def start_export_to_hdf5_parallel_wrapped(project_name):
 def export_demand_to_hdf5(project_name):
 
     start_export_hdf5 = time.time()
-    my_project = EmmeProject(project_name)
+    my_project = EmmeProject(project_name, state.model_input_dir)
     hdf5_filename = create_hdf5_demand_container(my_project.tod)
     my_store = h5py.File(hdf5_filename, "r+")
     e = "SELDEM" in my_store
@@ -449,14 +472,12 @@ def export_demand_to_hdf5(project_name):
     end_export_hdf5 = time.time()
     print('It took', round((end_export_hdf5-start_export_hdf5)/60,2), ' minutes to export all selected demand to the HDF5 File.')
     text = 'It took ' + str(round((end_export_hdf5-start_export_hdf5)/60,2)) + ' minutes to import matrices to Emme.'
-    logging.debug(text)
+    select_link_logger.info(text)
 
 def export_network_sla_results(network):
     """ Calculate link-level results by time-of-day, append to csv """
-
     _attribute_list = network.attributes('LINK')  
     _attribute_list = [_attribute for _attribute in _attribute_list if '@sl' in _attribute]
-
     network_data = {k: [] for k in _attribute_list}
     i_node_list = []
     j_node_list = []
@@ -476,7 +497,7 @@ def export_network_sla_results(network):
     return pd.DataFrame.from_dict(network_data)
 
 def export_select_link_results(project_name):
-    my_project = EmmeProject(project_name)
+    my_project = EmmeProject(project_name, state.model_input_dir)
     # Export link-level results for multiple attributes
     network = my_project.current_scenario.get_network()
     network_df = export_network_sla_results(network)
@@ -484,26 +505,28 @@ def export_select_link_results(project_name):
     network_df['modes'] = network_df['modes'].apply(lambda x: ''.join(list([j.id for j in x])))  
     network_df['tod'] = my_project.tod
     network_df = network_df[~network_df.modes.isin(['xk','kx'])]
-    network_df.to_csv('outputs/sla_results/link_results_'+my_project.tod+'.csv', index=False)
+    network_df.to_csv(os.path.join(_get_sla_output_dir(), 'link_results_'+my_project.tod+'.csv'), index=False)
     return network_df
 
 
-def main():
+def sla_run(state):
     # Start Select Link Analysis
     # This code is organized around the time periods for which we run select_link_analysis, 
     # often represented by the variable "tod". This variable will always
     # represent a Time of Day string, such as 6to7, 7to8, 9to10, etc.
+    #Report model starting
+    current_time = str(time.strftime("%H:%M:%S"))
+    select_link_logger.info('----Began SelectLinkAnalysis script at ' + current_time)
     start_of_run = time.time()
     pool_list = []
     select_link_project_list = [os.path.join('Projects', select_link_tod, select_link_tod + '.emp') for select_link_tod in select_link_tods]
-    # select_link_bank_list = [os.path.join('Banks', select_link_tod, 'emmebank') for select_link_tod in select_link_tods]
     select_link_parallel_num = len(select_link_project_list)
     for i in range(0, len(select_link_project_list), select_link_parallel_num):
         lp = select_link_project_list[i:i+select_link_parallel_num]
         pool_list.append(start_pool(lp))
 
-    if not os.path.exists(os.path.join(os.getcwd(), 'outputs', 'sla_results')):
-        os.makedirs(os.path.join(os.getcwd(), 'outputs', 'sla_results'))
+    if not os.path.exists(_get_sla_output_dir()):
+        os.makedirs(_get_sla_output_dir())
     pool_list = []
     for i in range(0, len(select_link_project_list), select_link_parallel_num):
         lp = select_link_project_list[i:i+select_link_parallel_num]
@@ -516,19 +539,16 @@ def main():
     
     text = "Emme Select Link Analysis completed normally"
     print(text)
-    logging.debug(text)
+    select_link_logger.info(text)
     # This is where the daily bank will be updated
     # daily_bank_path = os.path.join(os.getcwd(), 'Banks', 'Daily', 'emmebank')
     # expand_daily_bank(daily_bank_path)
-    project_name = os.path.join(os.getcwd(), 'projects', 'Daily', 'Daily.emp')
-    add_sla_results_to_daily_bank(project_name)
+    project_name = os.path.join(os.getcwd(), 'Projects', 'Daily', 'Daily.emp')
+    add_sla_results_to_daily_bank(state)
     text = "Added select link analysis results to the daily bank"
     print(text)
-    logging.debug(text)
+    select_link_logger.info(text)
     end_of_run = time.time()
     text = 'The Total Time for all processes took', round((end_of_run-start_of_run)/60,2), 'minutes to execute.'
     print(text)
-    logging.debug(text)
-
-if __name__ == "__main__":
-    main()
+    select_link_logger.info(text)
