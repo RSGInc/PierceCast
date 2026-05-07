@@ -115,7 +115,7 @@ class EmmeSettings(BaseModel):
     ###################################
     # Link Selection Criteria
     ###################################
-    select_link: list  # list of expression to use to select links and labeling convention
+    select_link: dict  # list of expression to use to select links and labeling convention
     select_link_tods: list  # TODs for which select link will be performed
 
     ###################################
@@ -190,7 +190,6 @@ class NetworkSettings(BaseModel):
 
     unit_of_length: str  # units of miles in Emme
     rdly_factor: float
-    rdly_label: str
     coord_unit_length: float  # network links measured in feet, converted to miles (1/5280)
     main_log_file: str
 

@@ -78,7 +78,6 @@ def arterial_delay(emmeProject, factor):
         ftype = link.data3
         lanes = link.num_lanes
         lanecap = link.data1
-        rdly_val = link[state.network_settings.rdly_label]
 
         # 1) Set temporary link attributes
 
@@ -190,7 +189,7 @@ def arterial_delay(emmeProject, factor):
 
             # 6) Factor rdly by 0.5
 
-            link.rdly = (link.rdly * factor) if rdly_val == 0 else (link.rdly * rdly_val)
+            link.rdly = link.rdly * factor
             link["@rdly"] = link.rdly
 
             # print link.i_node, link.j_node, link.rdly, link.data3
@@ -246,7 +245,7 @@ def run_importer(state):
             update_headways(my_project, headway_df)
 
         print(f"Loading {key} network")
-        for att in state.network_settings.link_extra_attributes + [state.network_settings.rdly_label]:
+        for att in state.network_settings.link_extra_attributes:
             my_project.create_extra_attribute("LINK", att)
         for att in state.network_settings.node_extra_attributes:
             my_project.create_extra_attribute("NODE", att)
