@@ -40,7 +40,7 @@ from scripts.supplemental import distribute_non_work_ixxi
 from scripts.supplemental import create_airport_trips
 from scripts.trucks import truck_model
 from scripts.utils import update_parking
-from scripts.analysis import sla_run
+from scripts.analysis import SelectLinkAnalysis
 from scripts.summarize.standard import (
     daily_bank,
     network_summary,
@@ -467,7 +467,7 @@ def main():
         run_all_summaries()
 
     if state.input_settings.run_select_link_analysis:
-        run_sla(state)
+        SelectLinkAnalysis.run_sla(state)
     data_wrangling.clean_up()
     print(
         "###### OH HAPPY DAY!  ALL DONE. GO GET "

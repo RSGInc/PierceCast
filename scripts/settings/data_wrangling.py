@@ -423,6 +423,16 @@ def update_skim_parameters(state):
         file.write(json.dumps(attribute_based_skim_spec, indent=4, sort_keys=True))
 
     #############################
+    # Select Link Analysis Specs
+    #############################
+
+    # Generate a dictionary for each user class to be assigned
+    select_link_analysis_spec['classes'] = select_link_analysis_spec_class *uc_count
+
+    with open(os.path.join(root_path,'auto','select_link_analysis.json'), 'w') as file:
+        file.write(json.dumps(select_link_analysis_spec, indent=4, sort_keys=True))
+
+    #############################
     # Path-Based Volume
     #############################
 

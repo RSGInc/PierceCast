@@ -190,6 +190,7 @@ class NetworkSettings(BaseModel):
 
     unit_of_length: str  # units of miles in Emme
     rdly_factor: float
+    rdly_label: str
     coord_unit_length: float  # network links measured in feet, converted to miles (1/5280)
     main_log_file: str
 

@@ -51,7 +51,7 @@ def distance_pricing(distance_rate, emmeProject, input_configuration):
     emmeProject.current_scenario.publish_network(network)
 
 
-def arterial_delay(emmeProject, factor):
+def arterial_delay(emmeProject, factor, rdly_label):
     network = emmeProject.current_scenario.get_network()
     # if '@rdly' in network.attributes('LINK'):
     #    emmeProject.delete_extra_attribute('@rdly')
@@ -183,13 +183,14 @@ def arterial_delay(emmeProject, factor):
     for node in network.nodes():
         for link in node.incoming_links():
             link.rdly = 0.0
+            rdly_factor = link[rdly_label]
 
             if node.cycle:
                 link.rdly = min(1, max(0.2, (link.red * link.red) / (2 * node.cycle)))
 
             # 6) Factor rdly by 0.5
 
-            link.rdly = link.rdly * factor
+            link.rdly = link.rdly * rdly_factor if rdly_factor > 0 else link.rdly * factor
             link["@rdly"] = link.rdly
 
             # print link.i_node, link.j_node, link.rdly, link.data3
@@ -266,7 +267,7 @@ def run_importer(state):
             + ".txt"
         )
 
-        arterial_delay(my_project, state.network_settings.rdly_factor)
+        arterial_delay(my_project, state.network_settings.rdly_factor, state.network_settings.rdly_label)
         if state.input_settings.add_distance_pricing:
             distance_pricing(
                 state.distance_rate_dict[value], my_project, state.input_settings
