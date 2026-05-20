@@ -467,7 +467,7 @@ def main():
         run_all_summaries()
 
     if state.input_settings.run_select_link_analysis:
-        SelectLinkAnalysis.run_sla(state)
+        SelectLinkAnalysis.sla_run(state)
     data_wrangling.clean_up()
     print(
         "###### OH HAPPY DAY!  ALL DONE. GO GET "
