@@ -168,19 +168,6 @@ def setup_emme_project_folders(state):
         desktop.close()
         shcopy(emme_toolbox_path + "/standard.mtbx", os.path.join("projects", tod))
 
-    # Create Daily project, associate with Daily emmebank
-    project = app.create_project("projects", "Daily")
-    desktop = app.start_dedicated(False, "psrc", project)
-    data_explorer = desktop.data_explorer()
-    database = data_explorer.add_database("Banks/" + "Daily" + "/emmebank")
-    database.open()
-    desktop.project.save()
-    desktop.close()
-    shcopy(
-        emme_toolbox_path + "/standard.mtbx",
-        os.path.join("projects", "Daily"),
-    )
-
     # Create master project, associate with all emmebanks by time of day
     project = app.create_project("projects", state.main_project_name)
     desktop = app.start_dedicated(False, "psrc", project)
@@ -198,6 +185,26 @@ def setup_emme_project_folders(state):
     shcopy(
         emme_toolbox_path + "/standard.mtbx",
         os.path.join("projects", state.main_project_name),
+    )
+
+
+@timed
+def setup_emme_daily_project_folders():
+    """Create Emme project folders for the Daily period."""
+
+    emme_toolbox_path = os.path.join(os.environ["EMMEPATH"], "toolboxes")
+ 
+    # Create Daily project, associate with Daily emmebank
+    project = app.create_project("projects", "Daily")
+    desktop = app.start_dedicated(False, "psrc", project)
+    data_explorer = desktop.data_explorer()
+    database = data_explorer.add_database("Banks/" + "Daily" + "/emmebank")
+    database.open()
+    desktop.project.save()
+    desktop.close()
+    shcopy(
+        emme_toolbox_path + "/standard.mtbx",
+        os.path.join("projects", "Daily"),
     )
 
 

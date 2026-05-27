@@ -117,9 +117,12 @@ def main(state):
     daily_emmebank.title = "daily"
     daily_scenario = daily_emmebank.scenario(1002)
     daily_network = daily_scenario.get_network()
-    database = project.data_explorer.add_database("Banks/Daily/emmebank")
+    try: 
+        database = project.data_explorer.add_database("Banks/Daily/emmebank")
+    except:
+        print("database already exists")
     project.desktop.project.save()
-    database.open()
+    project.change_active_database("daily")
 
     matrix_dict = text_to_dictionary("demand_matrix_dictionary", state.model_input_dir)
     uniqueMatrices = set(matrix_dict.values())
