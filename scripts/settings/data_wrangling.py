@@ -116,8 +116,12 @@ def setup_emme_bank_folders(state):
     """Generate folder and empty emmebanks for each time of day period."""
 
     # tod_dict = text_to_dictionary("time_of_day", "lookup")
+    if state.input_settings.run_select_link_analysis:
+        emme_dimension_file = "emme_bank_dimensions_select_link"
+    else:
+        emme_dimension_file = "emme_bank_dimensions"
     emmebank_dimensions_dict = json_to_dictionary(
-        "emme_bank_dimensions", state.model_input_dir
+        emme_dimension_file, state.model_input_dir
     )
 
     # Remove and existing banks
